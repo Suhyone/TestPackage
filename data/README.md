@@ -1,5 +1,9 @@
 # Test Package Datasets — QA/QC Pipeline & Web App Integration
 
+> 🤖 **สำหรับ AI Agent**: คู่มือโครงสร้าง Schema, Foreign Keys, และตัวอย่างโค้ดเรียกใช้งาน 👉 **[AGENT_GUIDE.md](./AGENT_GUIDE.md)**
+
+---
+
 ชุดข้อมูลระบบ **Test Package** สำหรับโครงการก่อสร้างโมดูลและงานท่อ (Piping QA/QC) สกัดและทำความสะอาดจากเน็ตเวิร์กแชร์ `\\192.168.100.12\qaqc` (Read-only extraction) พร้อมนำไปใช้งานกับ Web Application, Database (PostgreSQL / Supabase / SQLite) และ Data Science pipelines.
 
 ---
