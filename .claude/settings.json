@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -v \"^\\\\S*:[0-9]*:\\\\s*//\")"
+    ]
+  }
+}

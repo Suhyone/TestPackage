@@ -1,0 +1,223 @@
+body, .content-wrapper { font-family: 'Sarabun', 'Source Sans Pro', sans-serif; }
+.main-sidebar { background: #343a40; }
+.stat-box { border-radius: .25rem; color: #fff; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; min-height: 70px; }
+.stat-box .n { font-size: 1.9rem; font-weight: 600; line-height: 1; }
+.stat-box .t { font-size: .85rem; opacity: .95; }
+.stat-box.active-filter { outline: 3px solid rgba(0,0,0,.35); }
+:root { --s-open: #0e7490; --s-rework: #b02a37; --s-fixed: #ffc107; --s-approved: #1e7e34; --s-cancelled: #5c636a; --s-all: #31526b; }
+.bg-s-open { background: var(--s-open); } .bg-s-rework { background: var(--s-rework); }
+.bg-s-fixed { background: var(--s-fixed); color: #212529 !important; } .bg-s-approved { background: var(--s-approved); }
+.bg-s-cancelled { background: var(--s-cancelled); } .bg-s-all { background: var(--s-all); }
+.badge-status { padding: 3px 8px; border-radius: 10px; color: #fff; font-size: .75rem; }
+#drawingList { max-height: 640px; overflow: auto; }
+#drawingList .list-group-item { cursor: pointer; padding: .45rem .7rem; font-size: .85rem; }
+#drawingList .list-group-item.active { background: #17a2b8; border-color: #17a2b8; }
+.round-card { border-left: 4px solid #17a2b8; padding: 6px 10px; margin-bottom: 8px; background: #f8f9fa; }
+.round-card.fix { border-color: #ffc107; } .round-card.recheck.pass { border-color: #28a745; } .round-card.recheck.fail { border-color: #dc3545; }
+.thumb { width: 90px; height: 90px; object-fit: cover; border-radius: 4px; margin: 2px; cursor: pointer; border: 1px solid #ccc; }
+#detailPanel { position: fixed; top: 57px; right: 0; width: 460px; max-width: 100%; height: calc(100% - 57px); background: #fff; box-shadow: -2px 0 8px rgba(0,0,0,.25); z-index: 1040; overflow: auto; display: none; }
+#detailPanel.show { display: block; }
+.login-box { width: 380px; max-width: 92vw; }
+
+
+/* ---- Punch List: AG Grid + ปรับ UI ---- */
+.stat-box { transition: transform .08s, box-shadow .08s; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.stat-box:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.2); }
+.stat-box.active-filter { outline: 3px solid rgba(0,0,0,.35); outline-offset: 1px; }
+
+#punchTable { height: calc(100vh - 360px); min-height: 460px; width: 100%; border: 1px solid #dee2e6; border-top: 0; }
+.ag-theme-alpine {
+  --ag-font-family: 'Sarabun', sans-serif; --ag-font-size: 13px;
+  --ag-header-background-color: #343a40; --ag-header-foreground-color: #fff;
+  --ag-header-cell-hover-background-color: #495057;
+  --ag-odd-row-background-color: #fff; --ag-row-hover-color: #e8f4f8; --ag-selected-row-background-color: #d6eef5;
+  --ag-row-height: 40px; --ag-header-height: 38px; --ag-cell-horizontal-padding: 10px;
+  --ag-borders: solid 1px; --ag-border-color: #e3e7ea; --ag-row-border-color: #edf0f2;
+}
+.compact-table .ag-theme-alpine { --ag-row-height: 30px; --ag-font-size: 12px; }
+.ag-theme-alpine .ag-header-cell-label { font-weight: 600; }
+.ag-theme-alpine .ag-cell { display: flex; align-items: center; line-height: 1.35; }
+.ag-theme-alpine .ag-cell-wrap-text { word-break: break-word; padding-top: 6px; padding-bottom: 6px; }
+.ag-theme-alpine .ag-cell[col-id="item_no"], .ag-theme-alpine .ag-cell[col-id="category"],
+.ag-theme-alpine .ag-cell[col-id="status"], .ag-theme-alpine .ag-cell[col-id="rc"] { justify-content: center; }
+.ag-theme-alpine .ag-cell[col-id="item_no"] { font-weight: 600; color: #6c757d; }
+.ag-theme-alpine .ag-cell-inline-editing { box-shadow: 0 0 0 2px #17a2b8 inset; }
+
+/* แถบสีสถานะด้านซ้ายของแต่ละแถว */
+.ag-row.st-open     { box-shadow: inset 4px 0 0 #17a2b8; }
+.ag-row.st-rework   { box-shadow: inset 4px 0 0 #dc3545; background: #fff6f6; }
+.ag-row.st-fixed    { box-shadow: inset 4px 0 0 #ffc107; }
+.ag-row.st-approved { box-shadow: inset 4px 0 0 #28a745; }
+.ag-row.st-cancelled{ box-shadow: inset 4px 0 0 #adb5bd; }
+.ag-row.row-cancelled .ag-cell { color: #9aa0a6; text-decoration: line-through; }
+.btn-xs { padding: 1px 6px; font-size: .75rem; line-height: 1.4; }
+
+/* หัวกลุ่ม Test Pack / Drawing */
+.grp-row { height: 100%; display: flex; align-items: center; gap: 4px; padding: 0 12px; cursor: pointer; user-select: none; }
+.grp-row.grp-pack { background: #e3edf2; border-top: 2px solid #17a2b8; font-size: 14px; }
+.grp-row.grp-dwg  { background: #f5f8fa; padding-left: 34px; border-top: 1px solid #e3e7ea; }
+.grp-row:hover { filter: brightness(.97); }
+.grp-caret { width: 14px; color: #6c757d; font-size: 11px; }
+.badge-status { padding: 3px 9px; border-radius: 10px; color: #fff; font-size: .75rem; white-space: nowrap; }
+.badge-status.bg-s-fixed { color: #212529; }
+#colMenu label { font-weight: 400; cursor: pointer; }
+.ag-theme-alpine .hdr-center .ag-header-cell-label { justify-content: center; }
+
+/* ---- หัวคอลัมน์ + ตัวกรอง ---- */
+.hdr-wrap { display: flex; align-items: center; width: 100%; gap: 4px; cursor: pointer; user-select: none; }
+.hdr-wrap .hdr-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.hdr-wrap .hdr-sort { font-size: 9px; color: #ffc107; }
+.hdr-wrap .hdr-filter { margin-left: auto; opacity: .4; font-size: 11px; padding: 4px; }
+.hdr-wrap:hover .hdr-filter { opacity: .9; }
+.hdr-wrap .hdr-filter.on { opacity: 1; color: #ffc107; }
+.hdr-center .hdr-wrap { justify-content: center; }
+.hdr-center .hdr-wrap .hdr-filter { margin-left: 0; }
+.filter-pop { position: fixed; z-index: 3000; width: 260px; background: #fff; border: 1px solid #aab; border-radius: 4px; box-shadow: 0 6px 20px rgba(0,0,0,.3); padding: 8px; font-size: 13px; }
+.filter-pop .fp-list { max-height: 240px; overflow: auto; border: 1px solid #e3e7ea; margin-top: 4px; padding: 2px 6px; }
+.filter-pop label { display: block; margin: 2px 0; font-weight: 400; cursor: pointer; }
+.filter-pop .fp-all { font-weight: 600; margin: 4px 0 0; }
+
+/* ---- แถวหัวกลุ่ม: ยอดรวมตรงคอลัมน์ ---- */
+.grp-row { display: flex; align-items: stretch; height: 100%; padding: 0; cursor: pointer; user-select: none; }
+.grp-row.grp-l0 { background: #e3edf2; border-top: 2px solid #17a2b8; font-size: 14px; }
+.grp-row.grp-l1 { background: #f1f6f9; border-top: 1px solid #d5dde2; }
+.grp-row.grp-l2 { background: #f8fafb; border-top: 1px solid #e3e7ea; }
+.grp-label { flex: none; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; padding-right: 8px; }
+.grp-cell { flex: none; display: flex; align-items: center; justify-content: center; gap: 3px; font-weight: 600; font-size: 13px; overflow: hidden; }
+.sum-pill { min-width: 24px; padding: 1px 7px; border-radius: 10px; color: #fff; font-size: 12px; text-align: center; }
+.sum-pill.bg-s-fixed { color: #212529; }
+
+/* ---- แถวบันทึกใหม่ + ตัวนำทาง ---- */
+.ag-row.new-row { background: #effaf1 !important; box-shadow: inset 4px 0 0 #28a745; }
+.ag-row.new-row .ag-cell { border-top: 1px dashed #9bd3a8; }
+.auto-editor input { width: 100%; height: 100%; }
+.record-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; padding: 6px 10px; background: #f4f6f9; border: 1px solid #dee2e6; border-top: 0; font-size: 13px; }
+
+/* ---- ตัวเลือกรูป (เลือกไฟล์ / ถ่ายรูป) ---- */
+.pk-thumbs { display: flex; flex-wrap: wrap; gap: 6px; }
+.pk-thumb { position: relative; width: 72px; height: 72px; }
+.pk-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
+.pk-thumb button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; line-height: 16px; padding: 0; border: 0; border-radius: 50%; background: #dc3545; color: #fff; font-size: 14px; cursor: pointer; }
+
+/* ---- Test Pack inline (ล็อกซ้าย) ---- */
+.grp-cell.grp-name { justify-content: flex-start; padding-left: 10px; white-space: nowrap; font-size: 13px; }
+.pk-toggle { cursor: pointer; white-space: nowrap; }
+.pk-sub { font-size: 12px; }
+.ag-pinned-left-cols-container .ag-row, .ag-pinned-left-header { border-right: 0; }
+.ag-theme-alpine .ag-pinned-left-cols-container, .ag-theme-alpine .ag-pinned-left-header { box-shadow: 2px 0 4px rgba(0,0,0,.12); z-index: 2; }
+
+/* ---- ยอดรวมหัวกลุ่ม: จัดให้ตรงกับเซลล์ของคอลัมน์ (padding เท่ากับ ag-cell) ---- */
+.grp-cell { justify-content: flex-start; gap: 0; padding: 0 10px; box-sizing: border-box; border-right: 1px solid transparent; }
+.grp-cell.c { justify-content: center; padding: 0 4px; }
+.grp-cell.grp-name { padding-left: 10px; }
+.pct { display: flex; align-items: center; gap: 6px; width: 100%; }
+.pct-bar { position: relative; flex: 1; height: 12px; background: #d6dde2; border-radius: 6px; overflow: hidden; display: flex; }
+.pct-bar i { display: block; height: 100%; }
+.pct-done { background: #28a745; } .pct-fixed { background: #ffc107; }
+.pct b { min-width: 34px; text-align: right; font-size: 12px; }
+
+.grp-row { gap: 0 !important; }
+
+/* ---- หน้า qc_list: ชิปสถานะ + ตารางแบบย่อ ---- */
+.qc-chip { --c: var(--s-all); background: #fff !important; color: #212529 !important; border: 1px solid #ced4da; border-left: 5px solid var(--c); font-weight: 400; }
+.qc-chip b { margin-left: 4px; }
+.qc-chip:hover { background: #f1f4f6 !important; }
+.qc-chip.on { background: var(--c) !important; color: #fff !important; border-color: var(--c); box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.qc-chip.on.bg-s-fixed { color: #212529 !important; }
+.qc-chip.bg-s-open { --c: var(--s-open); } .qc-chip.bg-s-rework { --c: var(--s-rework); } .qc-chip.bg-s-fixed { --c: var(--s-fixed); }
+.qc-chip.bg-s-approved { --c: var(--s-approved); } .qc-chip.bg-s-cancelled { --c: var(--s-cancelled); } .qc-chip.bg-s-all { --c: var(--s-all); }
+.qc-chip:focus-visible, .qc-row:focus-visible { outline: 3px solid #1a5fb4; outline-offset: 1px; }
+.qc-wrap { max-height: calc(100vh - 270px); min-height: 300px; overflow: auto; }
+.qc-table thead th { position: sticky; top: 0; z-index: 1; background: #343a40; color: #fff; border: 0; font-weight: 600; }
+.qc-table td { vertical-align: middle; border-top: 1px solid #edf0f2; }
+.qc-table tr.first-pack td { border-top: 5px solid #1d4f91; }   /* เส้นน้ำเงินหนาคั่นระหว่าง Test Package */
+.qc-row { cursor: pointer; }
+.qc-row.active td { background: #d6eef5; }
+.qc-row td:first-child { box-shadow: inset 4px 0 0 transparent; }
+.qc-row.st-open td:first-child { box-shadow: inset 4px 0 0 var(--s-open); }
+.qc-row.st-rework td:first-child { box-shadow: inset 4px 0 0 var(--s-rework); }
+.qc-row.st-fixed td:first-child { box-shadow: inset 4px 0 0 #ffc107; }
+.qc-row.st-close td:first-child, .qc-row.st-approved td:first-child { box-shadow: inset 4px 0 0 var(--s-approved); }
+
+/* ---- ฟอร์มเพิ่มตำหนิ (การ์ดแบบ Google Form) + ตัวเลือกรูป ---- */
+.defect-card { border-left: 4px solid var(--s-open); }
+.pk-drop { border: 1px dashed #ced4da; border-radius: 4px; padding: 8px; }
+.pk-drop.over { background: #e8f4f8; border-color: #0e7490; }
+.qc-row.st-cancelled td { color: #6c757d; text-decoration: line-through; }
+.qc-row.st-cancelled td:first-child { box-shadow: inset 4px 0 0 var(--s-cancelled); }
+
+/* ค่า Test Package/Drawing ที่ซ้ำกับแถวบนจะจาง (ยังอ่านได้ contrast ผ่าน AA) + เส้นแบ่ง Drawing ใหม่ (หน้า qc_list) */
+.qc-table td.rep { color: #6c757d; font-weight: 400; }
+.qc-table tr.new-dwg td { border-top: 1px solid #8a949c; }
+.qc-table .qc-row:hover td { background: #e3f1f6; }
+.qc-table .qc-row.active td { background: #cfe6ee; }
+
+/* =====================================================================
+   Responsive (มือถือ / แท็บเล็ต)
+   ===================================================================== */
+/* แท็บเล็ตลงไป: แผงรายละเอียดเต็มความกว้างจอเล็ก ตารางหน้า admin สูงตามจอ */
+@media (max-width: 991.98px) {
+  #detailPanel { width: min(460px, 100%); }
+  #punchTable { height: calc(100vh - 220px); min-height: 420px; }
+  .record-nav .small.text-muted:last-child { display: none; }
+}
+
+/* มือถือ (< 768px) */
+@media (max-width: 767.98px) {
+  .content-wrapper > .content { padding-left: 0; padding-right: 0; }
+  #detailPanel { width: 100%; }
+  /* ช่องกรอก 16px กันเบราว์เซอร์ iOS ซูมเองตอนแตะ */
+  .form-control, .form-control-sm, select.form-control, textarea.form-control { font-size: 16px; }
+  .input-group.input-group-sm { max-width: 100% !important; flex: 1 1 100%; }
+  .btn-sm, .btn-xs { min-height: 36px; }
+  .modal-dialog { margin: .5rem; }
+  .pk-thumb { width: 64px; height: 64px; }
+
+  /* หน้า qc_list: ตารางกลายเป็นการ์ดต่อ 1 รายการ  [Test Package] [Drawing | Item] [Description] [Category | Status] */
+  .qc-wrap { max-height: none; overflow: visible; min-height: 0; }
+  .qc-table thead { display: none; }
+  .qc-table, .qc-table tbody { display: block; width: 100%; }
+  .qc-table tr.qc-empty { display: block; }
+  .qc-table tr.qc-row {
+    display: grid; grid-template-columns: 1fr auto; column-gap: 12px; row-gap: 4px; padding: 10px 12px 10px 14px;
+    grid-template-areas: "pack pack" "dwg item" "desc desc" "cat status";
+    border-top: 1px solid #dee2e6; box-shadow: inset 4px 0 0 transparent; }
+  .qc-table tr.first-pack { border-top: 6px solid #1d4f91; }
+  .qc-table tr.new-dwg { border-top: 1px solid #8a949c; }
+  .qc-table .qc-row td { display: block; border: 0 !important; padding: 0 !important; text-align: left !important; background: transparent !important; box-shadow: none !important; }
+  .qc-table .qc-row td[data-label]::before { content: attr(data-label); display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .03em; color: #6c757d; font-weight: 400; }
+  .qc-row .c-pack { grid-area: pack; word-break: break-all; }
+  .qc-row .c-dwg { grid-area: dwg; word-break: break-all; }
+  .qc-row .c-item { grid-area: item; text-align: right !important; }
+  .qc-row .c-item::before { content: 'Item '; }
+  .qc-row .c-desc { grid-area: desc; font-size: 1rem; padding: 2px 0 !important; }
+  .qc-row .c-cat { grid-area: cat; align-self: center; }
+  .qc-row .c-status { grid-area: status; text-align: right !important; align-self: center; }
+  .qc-table .qc-row:hover, .qc-table .qc-row.active { background: #e3f1f6; }
+  .qc-row.st-open { box-shadow: inset 4px 0 0 var(--s-open) !important; }
+  .qc-row.st-close { box-shadow: inset 4px 0 0 var(--s-approved) !important; }
+  .qc-row.st-cancelled { box-shadow: inset 4px 0 0 var(--s-cancelled) !important; }
+  .qc-row.st-cancelled .c-desc { text-decoration: line-through; }
+}
+
+/* ---- Test Packages (Register / Detail) ---- */
+#tpGrid { height: calc(100vh - 330px); min-height: 420px; width: 100%; border: 1px solid #dee2e6; }
+#chipRow .stat-box { min-height: 62px; }
+#chipRow .stat-box:focus-visible { outline: 3px solid #17a2b8; outline-offset: 2px; }
+#tpHead .nav-tabs .nav-link .badge { font-weight: 400; font-size: .65rem; }
+
+/* ---------- รายงาน Punch List (punch_report.php) — หน้ากระดาษ A4 ---------- */
+.report-sheet { background: #fff; max-width: 210mm; margin: 0 auto 24px; padding: 12mm; border: 1px solid #ced4da; font-size: 12px; color: #000; }
+.report-sheet table { width: 100%; border-collapse: collapse; }
+.rp-head td, .rp-table th, .rp-table td, .rp-sigs td { border: 1px solid #000; padding: 3px 6px; vertical-align: top; }
+.rp-head { margin-bottom: 8px; } .rp-l { width: 17%; font-weight: 600; background: #f1f3f5; } .rp-v { width: 33%; }
+.rp-table th { background: #e9ecef; text-align: center; } .rp-table tr { page-break-inside: avoid; }
+.rp-note { font-size: 10px; margin: 6px 0 10px; } .rp-sec-h { font-weight: 700; margin: 8px 0 4px; }
+.rp-sig { width: 25%; height: 100px; } .rp-sig-h { font-weight: 700; margin-bottom: 4px; } .rp-sign-line { margin: 18px 0 6px; }
+@media print {
+  @page { size: A4; margin: 10mm; }
+  .main-header, .main-sidebar, .main-footer, .no-print { display: none !important; }
+  .content-wrapper { margin: 0 !important; background: #fff !important; } .content { padding: 0 !important; }
+  .report-sheet { border: 0; padding: 0; max-width: none; margin: 0; }
+  .rp-sigs { page-break-inside: avoid; }
+}

@@ -1,0 +1,428 @@
+[
+  {
+    "file": "CT8-TP-MD-1.1-2",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-1.1-2",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-1.1",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2025-12-17"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2025-12-18",
+      "review_date": "2025-12-18"
+    },
+    "items": [
+      {
+        "row": 35,
+        "item": 1,
+        "drawing_no": "27A0B-PS-02",
+        "description": "Pipe not sit on permanent pipe support",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      },
+      {
+        "row": 38,
+        "item": 2,
+        "drawing_no": "27A0B-PS-03",
+        "description": "Pipe not sit on permanent pipe support",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      },
+      {
+        "row": 41,
+        "item": 3,
+        "drawing_no": "27A0B-PS-04",
+        "description": "Pipe not sit on permanent pipe support",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      },
+      {
+        "row": 44,
+        "item": 4,
+        "drawing_no": "27A0B-4-1",
+        "description": "Temporary pipe support to be install",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "file": "CT8-TP-MD-1.1-3",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-1.1-3",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-1.1",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-06"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-07",
+      "review_date": "2026-01-07"
+    },
+    "items": [
+      {
+        "row": 35,
+        "item": 1,
+        "drawing_no": "LM-02977",
+        "description": "Spool 45A0A-39 to 23A0A-9 to be torque bolt",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "file": "CT8-TP-MD-1.1-5",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-1.1-5",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-1.1",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-06"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-07",
+      "review_date": "2026-01-07"
+    },
+    "items": []
+  },
+  {
+    "file": "CT8-TP-MD-1.1-MBH02",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-AC-MD-1.1-MBH02",
+      "pages": "1 of 1",
+      "project_name": "INSPC' DATE:",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-1.1",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-06"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-07",
+      "review_date": "2026-01-07"
+    },
+    "items": [
+      {
+        "row": 35,
+        "item": 1,
+        "drawing_no": "LM-02967",
+        "description": "Pipe spool to be clean",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "file": "CT8-TP-MD-1.2-1",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-1.2-1",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "CT8",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-1.2",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-06"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-07",
+      "review_date": "2026-01-07"
+    },
+    "items": []
+  },
+  {
+    "file": "CT8-TP-MD-1.2-MBH01",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-AC-MD-1.2-MBH01",
+      "pages": "1 of 1",
+      "project_name": "INSPC' DATE:",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-1.2",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-06"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-07",
+      "review_date": "2026-01-07"
+    },
+    "items": [
+      {
+        "row": 35,
+        "item": 1,
+        "drawing_no": "LM-02967",
+        "description": "Pipe spool to be clean",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "file": "CT8-TP-MD-1.2-MBP02",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-AC-MD-1.2-MBP02",
+      "pages": "1 of 1",
+      "project_name": "INSPC' DATE:",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-1.2",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-06"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-07",
+      "review_date": "2026-01-07"
+    },
+    "items": [
+      {
+        "row": 35,
+        "item": 1,
+        "drawing_no": "LM-02967",
+        "description": "Pipe spool to be clean",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "file": "CT8-TP-MD-2.1-1",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-2.1-1",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-2.1",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-06"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-07",
+      "review_date": "2026-01-07"
+    },
+    "items": []
+  },
+  {
+    "file": "CT8-TP-MD-2.2-1",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-2.2-1",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "CT8",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-2.2",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-06"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-07",
+      "review_date": "2026-01-07"
+    },
+    "items": []
+  },
+  {
+    "file": "CT8-TP-MD-2.2-2",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-2.2-2",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-2.2",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-08"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-09",
+      "review_date": "2026-01-09"
+    },
+    "items": [
+      {
+        "row": 35,
+        "item": 1,
+        "drawing_no": "LM-02967",
+        "description": "Joint 34,38,28,22 to be clean",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "file": "CT8-TP-MD-3.1-1",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-3.1-1",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-3.1",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-08"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-09",
+      "review_date": "2026-01-09"
+    },
+    "items": [
+      {
+        "row": 35,
+        "item": 1,
+        "drawing_no": "LM-02967",
+        "description": "Joint 34,38,28,22 to be clean",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "file": "CT8-TP-MD-3.2-4",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-3.2-4",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "PAGES:",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-3.2",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-08"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-09",
+      "review_date": "2026-01-09"
+    },
+    "items": [
+      {
+        "row": 35,
+        "item": 1,
+        "drawing_no": "LM-02967",
+        "description": "Joint 34,38,28,22 to be clean",
+        "category": "B",
+        "status": "CLOSED",
+        "prod_sup": "Apichet",
+        "qci": "Cholachai",
+        "client_rep": "Panom",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "file": "CT8-TP-MD-3.2-5",
+    "sheet": "Sheet6",
+    "head": {
+      "report_no": "CT8-TP-MD-3.2-5",
+      "pages": "1 of 1",
+      "project_name": "USA PROJECT UNIT 1 - TALLGRASS",
+      "project_no": "CT8",
+      "client": "CIMTAS (NINGBO) STEELPROCESSING.CO.,LTD.",
+      "module": "MD-3.2",
+      "location": "BJCHI",
+      "discipline": "PIPING",
+      "test_stage": "",
+      "inspection_date": "2026-01-06"
+    },
+    "sign": {
+      "completed_by_name": "Mr. Cholachai J.",
+      "completed_date": "2026-01-07",
+      "review_date": "2026-01-07"
+    },
+    "items": []
+  }
+]
