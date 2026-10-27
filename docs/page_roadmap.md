@@ -15,13 +15,13 @@
 กฎสำคัญจากฟอร์ม: ถ้าเช็กลิสต์มีข้อใดเป็น **NO** ต้องเปิด Punch List และ **ห้ามทดสอบแรงดัน** จนกว่า Category A จะปิดหมด
 
 ## หน้าที่มีแล้ว
-Login · Dashboard · **Test Packages (Register)** · **Test Package Detail** (แท็บ Info · Punch · Sign-off ใช้งานได้) · Punch List (QC list) · Advanced Grid · Admin: Users · Admin: Category/Discipline
+Login · Dashboard · **Test Packages (Register)** · **Test Package Detail** (แท็บ Info · Contents · ISO · Pre-test · Punch · Sign-off ใช้งานได้ · Data Guide) · Punch List (QC list) · Advanced Grid · Admin: Users · Admin: Category/Discipline
 
 ## ลำดับที่แนะนำให้ทำ
 
 ### เฟส 1 — แกนหลักของ Test Package (ทำก่อน)
 1. ✅ **Test Package Register** — ตารางรายการ pack ทั้งหมด: TP No., Module, ระบบท่อ, ของไหล, ความดันทดสอบ, สถานะ, จำนวน punch ที่ยังเปิด (แยก A/B) · กรอง Module / ระบบ / สถานะ · คลิกเข้า pack
-2. ◐ **Test Package Detail** (ทำแล้ว: Info · Pre-test · Punch · Sign-off · เหลือ: Contents · ISO · Pressure test) — หน้าเดียวต่อ pack แบบแท็บ ตามชีตในฟอร์ม: Info · Contents · ISO/Spool · Pre-test · Punch · Pressure test · Sign-off (ทุกแท็บอยู่ใน pack เดียวกัน ไม่ต้องกระโดดหน้า)
+2. ◐ **Test Package Detail** (ทำแล้ว: Info · Contents · ISO · Pre-test · Punch · Sign-off · เหลือ: Pressure test) — หน้าเดียวต่อ pack แบบแท็บ ตามชีตในฟอร์ม: Info · Contents · ISO/Spool · Pre-test · Punch · Pressure test · Sign-off (ทุกแท็บอยู่ใน pack เดียวกัน ไม่ต้องกระโดดหน้า)
 3. ✅ (โค้ดเสร็จ รอรัน sql/07 และทดสอบกับข้อมูลจริง) **Pre-test Checklist** — ฟอร์มติ๊ก YES/NO/N/A ทีละข้อ · ข้อที่เป็น NO สร้าง punch item ให้อัตโนมัติ · แสดงป้ายว่า "พร้อมทดสอบ / ยังไม่พร้อม"
 4. ✅ (โค้ดเสร็จ — punch_report.php?id=, Print/PDF แล้ว ยังไม่มี Excel) **Punch List Report (พิมพ์)** — หน้าจัดรูปแบบ A4 เหมือน Sheet6 มีลายเซ็นท้ายฟอร์ม + ปุ่ม Print/PDF/Excel ส่งลูกค้า
 

@@ -16,9 +16,9 @@ include __DIR__ . '/../app/includes/header.php';
 </div>
 
 <?php /* กระดาษ A4: JS เติมหัวใบ ตารางรายการ และลายเซ็น */ ?>
-<div class="report-sheet" id="rpSheet"></div>
+<div class="rp-sheets" id="rpSheet"></div>
 
 <?php
-$pageScripts = ['assets/js/punch_common.js', 'assets/js/punch_report.js'];
+$pageScripts = ['assets/js/punch_common.js', 'assets/js/punch_photos.js', 'assets/js/punch_report.js'];
 include __DIR__ . '/../app/includes/footer.php';
 ?>

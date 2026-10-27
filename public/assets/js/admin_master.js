@@ -14,13 +14,13 @@ appReady.then(async ({ me }) => {
   $('catRows').addEventListener('change', async (e) => {
     const tr = e.target.closest('tr');
     const { error } = await sb.from('categories').update({ description: tr.querySelector('.f-desc').value, sort_order: +tr.querySelector('.f-sort').value }).eq('code', tr.dataset.code);
-    if (error) alert(error.message);
+    if (error) alert(friendlyErr(error));
   });
   $('addCat').onclick = async () => { const code = $('newCat').value.trim(); if (!code) return;
-    const { error } = await sb.from('categories').insert({ code, sort_order: 99 }); if (error) alert(error.message); $('newCat').value = ''; load(); };
+    const { error } = await sb.from('categories').insert({ code, sort_order: 99 }); if (error) alert(friendlyErr(error)); $('newCat').value = ''; load(); };
   $('addDisc').onclick = async () => { const name = $('newDisc').value.trim(); if (!name) return;
-    const { error } = await sb.from('disciplines').insert({ name, sort_order: 99 }); if (error) alert(error.message); $('newDisc').value = ''; load(); };
+    const { error } = await sb.from('disciplines').insert({ name, sort_order: 99 }); if (error) alert(friendlyErr(error)); $('newDisc').value = ''; load(); };
   $('discRows').addEventListener('click', async (e) => { const b = e.target.closest('.del-disc'); if (!b || !confirm('Delete?')) return;
-    const { error } = await sb.from('disciplines').delete().eq('name', b.dataset.name); if (error) alert(error.message); load(); });
+    const { error } = await sb.from('disciplines').delete().eq('name', b.dataset.name); if (error) alert(friendlyErr(error)); load(); });
   load();
 });

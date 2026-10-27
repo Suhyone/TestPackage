@@ -1,0 +1,14 @@
+{
+  "name": "bjchi/qaqc-test-package",
+  "description": "BJCHI QA/QC ERP - Test Package > Punch List",
+  "type": "project",
+  "require": {
+    "php": ">=8.3"
+  },
+  "config": {
+    "platform": { "php": "8.3.0" }
+  },
+  "scripts": {
+    "serve": "php -S localhost:8000 -t public"
+  }
+}

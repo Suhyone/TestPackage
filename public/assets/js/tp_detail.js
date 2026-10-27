@@ -1,7 +1,7 @@
 // ===================================================================
 // tp_detail.js — หน้ารายละเอียด Test Package 1 ใบ (test_package.php?id=...)
-//   แท็บที่ใช้งานได้ : Info (Sheet1) · Pre-test (Sheet5 — ตรรกะอยู่ใน tp_pretest.js) · Punch (หัวใบ Sheet6 + รายการ punch) · Sign-off (ลายเซ็น Sheet1 + Sheet6)
-//   แท็บที่เตรียมไว้ : Contents · ISO / Spool · Pressure test (เฟสถัดไป — แสดงคำอธิบายและสถานะ gate ของการทดสอบแรงดัน)
+//   แท็บที่ใช้งานได้ : Info (Sheet1) · Contents + ISO / Spool (ตรรกะอยู่ใน tp_data.js) · Pre-test (Sheet5 — tp_pretest.js) · Punch (หัวใบ Sheet6 + รายการ punch) · Sign-off (ลายเซ็น Sheet1 + Sheet6)
+//   Pressure test    : บันทึกผลทดสอบแรงดัน + gate ล็อกการทดสอบ (ตรรกะอยู่ใน tp_pressure.js)
 //   ตารางที่ใช้      : test_packs (Info + ลายเซ็น Sheet1) · punch_reports (หัวใบ + ลายเซ็น Sheet6) · projects · v_punch_items
 //   สิทธิ์           : QC / admin แก้และบันทึกได้ · เจ้าหน้าที่ดูอย่างเดียว (บังคับซ้ำที่ RLS ในฐานข้อมูล)
 //   พึ่งพา           : punch_common.js ($, STATUS, CAT_CLS, alertErr), tp_common.js (PSTATE, punchState, stateBadge), app.js (sb, appReady, esc, fmtDate)
@@ -34,25 +34,15 @@ const PUNCH_FIELDS = [
 // ลายเซ็น: Test Package (Sheet1) = ชื่อ+วันที่ · ใบ Punch List (Sheet6) = ชื่อ+ตำแหน่ง+วันที่
 const SIGN_SECTIONS = [
   { title: 'Test package sign-off (Pressure Test Information)', cols: [
-    { head: 'Prepared by', sub: 'BJCHI Engineering', fields: [['signed_prepared_name', 'Name', 'tp'], ['signed_prepared_date', 'Date', 'tp', 'date']] },
-    { head: 'Test / Inspector by', sub: 'BJCHI QC / Inspector', fields: [['signed_inspector_name', 'Name', 'tp'], ['signed_inspector_date', 'Date', 'tp', 'date']] },
-    { head: 'Testing approved by', sub: 'CIMTAS representative', fields: [['signed_approved_name', 'Name', 'tp'], ['signed_approved_date', 'Date', 'tp', 'date']] } ] },
+    { head: 'Prepared by', sub: 'BJCHI Engineering', sig: ['signed_prepared_sig', 'tp'], fields: [['signed_prepared_name', 'Name', 'tp'], ['signed_prepared_date', 'Date', 'tp', 'date']] },
+    { head: 'Test / Inspector by', sub: 'BJCHI QC / Inspector', sig: ['signed_inspector_sig', 'tp'], fields: [['signed_inspector_name', 'Name', 'tp'], ['signed_inspector_date', 'Date', 'tp', 'date']] },
+    { head: 'Testing approved by', sub: 'CIMTAS representative', sig: ['signed_approved_sig', 'tp'], fields: [['signed_approved_name', 'Name', 'tp'], ['signed_approved_date', 'Date', 'tp', 'date']] } ] },
   { title: 'Punch-list sign-off (Review & Witness)', cols: [
-    { head: 'Completed by', sub: '', fields: [['completed_name', 'Name', 'rp'], ['completed_position', 'Position', 'rp'], ['completed_date', 'Date', 'rp', 'date']] },
-    { head: 'BJCHI', sub: '', fields: [['bjchi_name', 'Name', 'rp'], ['bjchi_position', 'Position', 'rp'], ['bjchi_date', 'Date', 'rp', 'date']] },
-    { head: 'CIMTAS', sub: '', fields: [['cimtas_name', 'Name', 'rp'], ['cimtas_position', 'Position', 'rp'], ['cimtas_date', 'Date', 'rp', 'date']] },
-    { head: 'Representative', sub: '', fields: [['representative_name', 'Name', 'rp'], ['representative_position', 'Position', 'rp'], ['representative_date', 'Date', 'rp', 'date']] } ] },
+    { head: 'Completed by', sub: '', sig: ['completed_sig', 'rp'], fields: [['completed_name', 'Name', 'rp'], ['completed_position', 'Position', 'rp'], ['completed_date', 'Date', 'rp', 'date']] },
+    { head: 'BJCHI', sub: '', sig: ['bjchi_sig', 'rp'], fields: [['bjchi_name', 'Name', 'rp'], ['bjchi_position', 'Position', 'rp'], ['bjchi_date', 'Date', 'rp', 'date']] },
+    { head: 'CIMTAS', sub: '', sig: ['cimtas_sig', 'rp'], fields: [['cimtas_name', 'Name', 'rp'], ['cimtas_position', 'Position', 'rp'], ['cimtas_date', 'Date', 'rp', 'date']] },
+    { head: 'Representative', sub: '', sig: ['representative_sig', 'rp'], fields: [['representative_name', 'Name', 'rp'], ['representative_position', 'Position', 'rp'], ['representative_date', 'Date', 'rp', 'date']] } ] },
 ];
-// แท็บที่เตรียมไว้: ไอคอน + ชื่อ + คำอธิบายสั้น + เฟสที่จะทำ
-const SOON = {
-  contents: { icon: 'fa-tasks', title: 'Contents checklist', phase: 'Phase 2',
-    text: 'The 15-section content checklist (P&ID, line list, isometrics, welding records, NDE, flange assembly, gauge calibration, pressure test report, punch list…) with YES / N/A and file attachments for each section.' },
-  iso: { icon: 'fa-project-diagram', title: 'ISO / Spool register', phase: 'Phase 2',
-    text: 'Isometric drawings, line and spool numbers, fluid, design and test pressure and material for this package (from the ISO INDEX sheet). It will also feed the Drawing No. list when adding punch items.' },
-  pressure: { icon: 'fa-tachometer-alt', title: 'Pressure test record', phase: 'Phase 2',
-    text: 'Test date, gauge and calibration certificate, readings, holding time and result. Locked until the pre-test checklist passes and no Category A punch is open.' },
-};
-
 // ---------- ตัวช่วย ----------
 // สร้างช่อง input 1 ช่อง (data-t / data-f ใช้ตอนรวบรวมค่าไปบันทึก) · ค่าอ่านจากแถวข้อมูลที่ตรงกับตาราง
 function inputHtml({ f, t, label, type = 'text', ro = false, w = 4 }, value, idPrefix = 'f_') {
@@ -63,10 +53,10 @@ function inputHtml({ f, t, label, type = 'text', ro = false, w = 4 }, value, idP
 }
 // ค่าของช่องในแถวข้อมูล: ช่องพิเศษ _project_name / _client มาจากตาราง projects
 const valueOf = (t, f) => f === '_project_name' ? project?.project_name : f === '_client' ? project?.client : (t === 'rp' ? report?.[f] : tp?.[f]);
-// รวบรวมค่าจากฟอร์มตามตาราง (ว่าง = null · ช่องตัวเลขแปลงเป็นตัวเลข)
+// รวบรวมค่าจากฟอร์มตามตาราง (ว่าง = null · ช่องตัวเลขแปลงเป็นตัวเลข) — ข้ามช่อง *_sig: path ลายเซ็นบันทึกแยกผ่าน saveSigPath แล้ว กัน Save sign-off เอาค่าเก่าไปทับ (เช่นเปิดสองแท็บ)
 function collect(form, t) {
   const out = {};
-  form.querySelectorAll(`[data-t="${t}"]:not(:disabled)`).forEach(el => {
+  form.querySelectorAll(`[data-t="${t}"]:not(:disabled):not([data-f$="_sig"])`).forEach(el => {
     const v = el.value.trim();
     out[el.dataset.f] = v === '' ? null : (el.dataset.num ? Number(v) : v);
   });
@@ -100,7 +90,7 @@ function renderHead() {
   document.title = `${tp.test_pack_no} · Test Package | BJCHI QA/QC`;
   $('crumbNo').textContent = tp.test_pack_no; $('hNo').textContent = tp.test_pack_no;
   $('hSub').textContent = [tp.module_no && `Module ${tp.module_no}`, tp.piping_system && `System ${tp.piping_system}`, tp.piping_name].filter(Boolean).join(' · ');
-  $('hState').innerHTML = stateBadge(punchState(c));
+  $('hState').innerHTML = stateBadge(punchState(c)) + pressureBadge();
   const pill = (n, label, cls) => `<span class="badge-status ${cls}">${label} ${n}</span>`;
   $('hCounts').innerHTML = pill(c.open_a, 'Open A', 'bg-s-rework') + pill(c.open_b, 'Open B', 'bg-s-fixed') + pill(c.items_closed, 'Closed', 'bg-s-approved') + pill(c.items_total, 'Total', 'bg-s-all');
 }
@@ -115,7 +105,10 @@ function renderPunch() {
   $('punchFields').innerHTML = PUNCH_FIELDS.map(fd => inputHtml(fd, valueOf(fd.t, fd.f), 'p_')).join('');
   $('punchSave').classList.toggle('d-none', !canQC);
   $('punchReport').href = 'punch_report.php?id=' + tpId;
+  $('hField').href = 'field_pack.php?id=' + tpId;
   $('punchLink').href ='qc_list.php?tp=' + encodeURIComponent(tp.test_pack_no);
+  $('punchAdd').href = 'qc_list.php?add=1&tp=' + encodeURIComponent(tp.test_pack_no);
+  $('punchAdd').classList.toggle('d-none', !canQC);
   const cat = (c) => c ? `<span class="badge badge-${CAT_CLS[c] || 'light'}">${esc(c)}</span>` : '';
   $('punchRows').innerHTML = items.map(i => `<tr>
     <td>${esc(i.item_no ?? '')}</td><td>${esc(i.drawing_no)}</td><td>${esc(i.deficiency)}</td>
@@ -130,23 +123,12 @@ function renderSign() {
   $('signFields').innerHTML = SIGN_SECTIONS.map(s => `<h6 class="text-muted small text-uppercase mt-3 mb-2">${esc(s.title)}</h6>
     <div class="form-row">${s.cols.map(col => `<div class="col-md-${12 / s.cols.length} mb-2">
       <div class="border rounded p-2 h-100"><div class="font-weight-bold small">${esc(col.head)}</div>${col.sub ? `<div class="small text-muted mb-1">${esc(col.sub)}</div>` : '<div class="mb-1"></div>'}
-      <div class="form-row">${col.fields.map(([f, label, t, type]) => inputHtml({ f, t, label, type: type || 'text', w: 12 }, valueOf(t, f), 's_')).join('')}</div></div></div>`).join('')}</div>`).join('');
+      <div class="form-row">${col.fields.map(([f, label, t, type]) => inputHtml({ f, t, label, type: type || 'text', w: 12 }, valueOf(t, f), 's_')).join('')}</div>${col.sig && sigEnabled() ? sigBoxHtml(...col.sig) : ''}</div></div>`).join('')}</div>`).join('');
+  loadSigPreviews();
   $('signSave').classList.toggle('d-none', !canQC);
 }
-// แท็บที่เตรียมไว้ + แถบ gate การทดสอบแรงดัน (คำนวณจาก punch Category A ที่ยัง Open จริง)
-function renderSoon() {
-  const c = counts(), ps = pretestSummary(), ptOk = pretest.missing || ps.ready;
-  const gate = c.open_a > 0
-    ? `<div class="alert alert-danger py-2 small mb-3" role="status"><i class="fas fa-ban"></i> Pressure test is <b>not allowed</b>: ${c.open_a} Category A punch item${c.open_a > 1 ? 's are' : ' is'} still open.</div>`
-    : ptOk
-    ? `<div class="alert alert-success py-2 small mb-3" role="status"><i class="fas fa-check-circle"></i> No Category A punch open${c.open_b ? ` (${c.open_b} Category B open — proceed at project manager's discretion)` : ''}. Pre-test checklist is complete.</div>`
-    : `<div class="alert alert-warning py-2 small mb-3" role="status"><i class="fas fa-hourglass-half"></i> Pressure test is <b>not allowed yet</b>: the pre-test checklist is not complete.</div>`;
-  Object.entries(SOON).forEach(([k, s]) => {
-    $('tab-' + k).innerHTML = `${k === 'pressure' ? gate : ''}
-      <div class="text-center text-muted py-4"><i class="fas ${s.icon} fa-2x mb-2" aria-hidden="true"></i>
-      <h6 class="mb-1">${esc(s.title)}</h6><div class="small mb-2">${esc(s.phase)}</div><p class="small mx-auto mb-0" style="max-width:560px">${esc(s.text)}</p></div>`;
-  });
-}
+// แท็บ Pressure test (ชื่อฟังก์ชันเดิม — ถูกเรียกทุกครั้งที่ punch / pre-test เปลี่ยน เพื่อให้ gate อัปเดต)
+function renderSoon() { renderPressure(); }
 
 // ---------- เหตุการณ์ ----------
 // ปุ่มบันทึกของแต่ละฟอร์ม (Info / Punch / Sign-off) — บันทึกเฉพาะช่องที่แก้ไขได้ แล้วแจ้งผล
@@ -154,19 +136,19 @@ function bindForms() {
   $('infoForm').addEventListener('submit', async (e) => {
     e.preventDefault(); $('infoSave').disabled = true; setMsg('infoMsg', 'Saving…');
     try { await saveTp(collect($('infoForm'), 'tp')); renderHead(); renderSoon(); setMsg('infoMsg', 'Saved'); }
-    catch (err) { setMsg('infoMsg', 'Could not save: ' + (err.message || err), false); }
+    catch (err) { setMsg('infoMsg', 'Could not save: ' + friendlyErr(err), false); }
     finally { $('infoSave').disabled = false; }
   });
   $('punchForm').addEventListener('submit', async (e) => {
     e.preventDefault(); $('punchSave').disabled = true; setMsg('punchMsg', 'Saving…');
     try { await saveReport(collect($('punchForm'), 'rp')); setMsg('punchMsg', 'Saved'); }
-    catch (err) { setMsg('punchMsg', 'Could not save: ' + (err.message || err), false); }
+    catch (err) { setMsg('punchMsg', 'Could not save: ' + friendlyErr(err), false); }
     finally { $('punchSave').disabled = false; }
   });
   $('signForm').addEventListener('submit', async (e) => {
     e.preventDefault(); $('signSave').disabled = true; setMsg('signMsg', 'Saving…');
     try { await saveTp(collect($('signForm'), 'tp')); await saveReport(collect($('signForm'), 'rp')); setMsg('signMsg', 'Saved'); }
-    catch (err) { setMsg('signMsg', 'Could not save: ' + (err.message || err), false); }
+    catch (err) { setMsg('signMsg', 'Could not save: ' + friendlyErr(err), false); }
     finally { $('signSave').disabled = false; }
   });
   // จำแท็บที่เปิดไว้ใน URL (#punch ฯลฯ) เพื่อรีเฟรช/ส่งลิงก์แล้วกลับมาที่แท็บเดิม
@@ -189,6 +171,7 @@ async function reloadItems() {
 async function init() {
   ({ me } = await appReady);
   canQC = me.role === 'qc' || me.role === 'admin';
+  if (!canQC) $('tpTabs').insertAdjacentHTML('beforebegin', '<div class="small text-muted mb-2" role="status"><i class="fas fa-eye" aria-hidden="true"></i> View only — QC / admin can edit.</div>');
   if (!tpId) return $('notFound').classList.remove('d-none');
   const { data, error } = await sb.from('test_packs').select('*').eq('id', tpId).maybeSingle();
   if (error || !data) return $('notFound').classList.remove('d-none');
@@ -198,11 +181,11 @@ async function init() {
   const [proj, rep] = await Promise.all([
     sb.from('projects').select('*').eq('project_no', tp.project_no).maybeSingle(),
     sb.from('punch_reports').select('*').eq('test_pack_id', tpId).maybeSingle(),
-    reloadItems(), loadPretest(),
+    reloadItems(), loadPretest(), loadData(), loadPressure(),
   ]);
   project = proj.data || null; report = rep.data || null;
 
-  renderHead(); renderInfo(); renderPunch(); renderSign(); renderPretest(); renderSoon(); bindForms(); bindPretest();
+  renderHead(); renderInfo(); renderPunch(); renderSign(); renderPretest(); renderData(); renderSoon(); bindForms(); bindPretest(); bindData(); bindPressure(); bindSignature();
   $('tpHead').classList.remove('d-none');
 }
 // เริ่มทำงานของหน้า

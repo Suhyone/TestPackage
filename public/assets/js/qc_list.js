@@ -1,7 +1,8 @@
 // qc_list.js — Punch List แบบย่อ (QA/QC และเจ้าหน้าที่): ชิปสถานะ (Open/Close/Cancelled) + ค้นหา + ตาราง 6 คอลัมน์ (Test Package / Drawing / Item / Description / Category / Status)
 // รายละเอียดทั้งหมดอยู่ในแผงขวา (openDetail ใน punch_detail.js) จึงต้องมี state / me / canQC / renderStats / applyFilters ชื่อเดียวกับหน้า admin
 // โหลดข้อมูลแบบค่อยเป็นค่อยไป: หน้าแรก (1,000 แถว) แสดงทันที แล้วดึงหน้าที่เหลือเบื้องหลัง · วาดแถวเพิ่มอัตโนมัติเมื่อเลื่อนถึงท้ายตาราง (ไม่มีปุ่ม Show more)
-const state = { rows: [], counts: {}, counted: new Map(), drawings: new Map(), packs: [], categories: [], disciplines: [], f: { project: '', skid: '', q: '' } };
+// fpOn = ฐานข้อมูลมีคอลัมน์ fix_pending (sql/11) · sub = ตัวกรองย่อยของงาน Open: 'waiting' = ส่งงานแก้แล้วรอ QC, 'tofix' = ยังรอแก้
+const state = { fpOn: false, sub: '', fAll: { pack: '', dwg: '' }, countedW: new Map(), rows: [], counts: {}, counted: new Map(), drawings: new Map(), packs: [], categories: [], disciplines: [], f: { project: '', skid: '', q: '', pack: '', dwg: '' } };
 let me, canQC = false, loadSeq = 0;
 // สถานะที่เลือกอยู่ (เลือกได้อันเดียว; ว่าง = All)
 const sel = new Set();
@@ -12,9 +13,10 @@ let viewRows = [], rendered = 0, ctx = { pack: null, dwg: null }, loading = fals
 
 // ---------- init ----------
 async function init() {
+  prefillProjectSelect();                                                   // แสดง Project No. ที่จำไว้ทันที ไม่รอข้อมูล
   ({ me } = await appReady);
   canQC = me.role === 'qc' || me.role === 'admin';                         // admin ใช้หน้านี้เหมือน QC (ตารางแบบเต็มอยู่ที่ punch_list.php เมนู Advanced Grid)
-  $('pageHead').textContent = canQC ? 'Punch List' : 'Items to Fix';
+  $('pageHead').textContent = 'Punch List';
   sel.add('open');                                                          // เริ่มที่งานที่ยัง Open
   const tpParam = new URLSearchParams(location.search).get('tp');          // มาจากหน้ารายละเอียด Test Package: ค้นหาด้วยเลข pack และแสดงทุกสถานะ
   if (tpParam) { sel.clear(); $('qSearch').value = tpParam; state.f.q = tpParam.toLowerCase(); }                                                          // เริ่มที่งานที่ยัง Open
@@ -29,13 +31,28 @@ async function init() {
   state.packs = packs;
 
   const projects = [...new Set(packs.map(p => p.project_no))].sort();
-  $('fProject').innerHTML = '<option value="">All</option>' + projects.map(p => `<option>${esc(p)}</option>`).join('');
-  $('projectBox').classList.replace('d-none', 'd-flex');                    // Project No. อยู่ที่ header ข้างปุ่ม Home
+  state.f.project = fillProjectSelect(projects);                            // Project No. อยู่ที่ header ข้างปุ่ม Home (ใช้ค่าที่จำไว้)
+  if (tpParam) {                                                            // มาจากหน้า pack: ใช้โครงการของ pack นั้นเฉพาะหน้านี้ (ไม่เขียนทับค่าที่จำไว้) กันตัวกรองที่จำไว้ซ่อนงานของมัน
+    const pk = packs.find(p => p.test_pack_no === tpParam);
+    if (pk) { state.f.project = pk.project_no; $('fProject').value = pk.project_no; showTpBadge(tpParam); }
+  }
   fillSkids();
-  $('fProject').onchange = () => { state.f.project = $('fProject').value; state.f.skid = ''; fillSkids(); loadData(); };
-  $('fSkid').onchange = () => { state.f.skid = $('fSkid').value; loadData(); };
+  $('fProject').onchange = () => { state.f.project = $('fProject').value; state.f.skid = ''; state.f.pack = ''; state.f.dwg = ''; fillSkids(); loadData(); };
+  $('fSkid').onchange = () => { state.f.skid = $('fSkid').value; state.f.pack = ''; state.f.dwg = ''; loadData(); };
+  $('fPack').onchange = () => { state.f.pack = $('fPack').value; state.f.dwg = ''; applyFilters(); };            // กรอง 2 ชั้น: เลือก Test Package แล้ว Drawing เหลือเฉพาะของ pack นั้น
+  $('fDrawing').onchange = () => { state.f.dwg = $('fDrawing').value; applyFilters(); };
   bindAdd();
   await loadData();
+}
+// ป้ายบอกว่ากำลังกรองด้วย Test Package นี้ (มาจาก ?tp=) พร้อมปุ่ม ✕ ล้างตัวกรอง
+function showTpBadge(no) {
+  $('qSearch').closest('.input-group').insertAdjacentHTML('afterend',
+    `<span class="badge badge-info p-2" id="tpBadge">Test Package: ${esc(no)} <button type="button" class="close ml-2" id="tpBadgeX" aria-label="Clear Test Package filter" style="float:none;font-size:1rem;line-height:1;color:inherit">&times;</button></span>`);
+  $('tpBadgeX').onclick = () => {
+    state.f.q = ''; $('qSearch').value = ''; $('tpBadge').remove();
+    const u = new URL(location.href); u.searchParams.delete('tp'); history.replaceState(null, '', u);
+    applyFilters();
+  };
 }
 // เติมรายการ Skid ตาม Project ที่เลือก
 function fillSkids() {
@@ -60,6 +77,8 @@ async function loadCounts() {
     ? sb.from('v_punch_items').select('id', { count: 'exact', head: true }).eq('status', k)
     : sb.from('punch_items').select('id, drawings!inner(test_packs!inner(project_no,skid))', { count: 'exact', head: true }).eq('status', k))));
   state.counts = {}; CHIPS.forEach((k, i) => state.counts[k] = res[i].count || 0);
+  const w = await scoped(sb.from('v_punch_items').select('id', { count: 'exact', head: true }).eq('status', 'open').eq('fix_pending', true));
+  state.fpOn = viewOk && !w.error; state.counts.waiting = state.fpOn ? (w.count || 0) : 0; state.countedW = new Map();   // ไม่มีคอลัมน์ (ยังไม่รัน sql/11) = ซ่อนป้าย/ชิป
   state.counted = new Map();                       // id -> สถานะที่นับไปแล้ว (renderStats ใช้ปรับตัวเลขเมื่อสถานะเปลี่ยน)
 }
 // แปลงแถวดิบจากฐานข้อมูลเป็นแถวของหน้า และจำ drawing ไว้ใน state.drawings
@@ -110,13 +129,21 @@ async function loadData() {
     }
     if (!viewOk) { state.rows.sort(rowCmp); applyFilters(); }               // วิธีเดิม: เรียงทีเดียวตอนครบ
   } catch (e) { alertErr(e); }
-  finally { if (seq === loadSeq) { loading = false; paintInfo(); } }
+  finally {
+    if (seq === loadSeq) {
+      loading = false; paintInfo();
+      const before = state.f.pack + '|' + state.f.dwg;
+      fillPackDrawing(true);                                                // โหลดครบแล้ว: เติมรายการ Test Package/Drawing ครั้งสุดท้าย (และล้างค่าที่ไม่มีในรายการ)
+      if (state.f.pack + '|' + state.f.dwg !== before) applyFilters();
+    }
+  }
 }
 // มีแถวใหม่ต่อท้าย: คำนวณรายการที่ผ่านตัวกรองใหม่ (ลำดับส่วนต้นเหมือนเดิมเสมอ) แล้วเติมตารางถ้าท้ายตารางอยู่ใกล้สายตา — ไม่วาดใหม่ทั้งตาราง
 function extend() {
   renderStats();
   const body = $('qcRows');
-  viewRows = state.rows.filter(r => matchQ(r) && (!sel.size || sel.has(r.status)));
+  fillPackDrawing();
+  viewRows = state.rows.filter(r => matchQ(r) && (!sel.size || sel.has(r.status)) && subOk(r));
   if (body.querySelector('.qc-empty')) { body.innerHTML = ''; rendered = 0; ctx = { pack: null, dwg: null }; }   // เอาข้อความ Loading... ออก
   if (rendered === 0) appendRows(PAGE);
   paintInfo(); fill();
@@ -130,12 +157,34 @@ function paintInfo() {
 }
 
 // ---------- กรอง + แสดงผล ----------
+// เติมรายการ Test Package / Drawing จากแถวที่โหลดอยู่ (กรอง 2 ชั้น: Drawing แสดงเฉพาะของ pack ที่เลือก) — ค่าที่เลือกไว้คงอยู่ระหว่างโหลด และถูกล้างเมื่อโหลดครบแล้วไม่มีในรายการ
+// ระหว่างโหลด (loading) extend() เรียกถี่ ๆ → รวบเป็นทุก ~400ms · now = true เติมทันที (ผู้ใช้เปลี่ยนตัวกรอง / โหลดครบ) · ถ้ารายการไม่เปลี่ยนจะไม่เขียน <select> ทับ (กัน dropdown ที่เปิดค้างปิดเอง)
+let fpdTimer = null, fpdSig = '';
+function fillPackDrawing(now) {
+  if (loading && !now) { if (!fpdTimer) fpdTimer = setTimeout(() => { fpdTimer = null; fillPackDrawing(true); }, 400); return; }
+  clearTimeout(fpdTimer); fpdTimer = null;
+  const cmp = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true });
+  const packs = [...new Set(state.rows.map(r => r.test_pack_no))].sort(cmp);
+  const dwgs = [...new Set(state.rows.filter(r => !state.f.pack || r.test_pack_no === state.f.pack).map(r => r.drawing_no))].sort(cmp);
+  if (!loading) { if (state.f.pack && !packs.includes(state.f.pack)) state.f.pack = ''; if (state.f.dwg && !dwgs.includes(state.f.dwg)) state.f.dwg = ''; }
+  const opts = (all, list, cur) => `<option value="">${all}</option>` + [...new Set(cur && !list.includes(cur) ? [...list, cur] : list)].map(v => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(v === EXTERNAL_PACK ? 'External' : v)}</option>`).join('');
+  const sig = [state.f.pack, state.f.dwg, packs.join(''), dwgs.join('')].join('');
+  if (sig === fpdSig) return;                                               // รายการและค่าที่เลือกเหมือนเดิม: ไม่ต้องเขียนใหม่
+  fpdSig = sig;
+  $('fPack').innerHTML = opts('All Test Packages', packs, state.f.pack); $('fDrawing').innerHTML = opts('All Drawings', dwgs, state.f.dwg);
+}
 // ผ่านค่าค้นหาหรือไม่ (ไม่รวมสถานะ)
 function matchQ(r) {
+  if (state.f.pack && r.test_pack_no !== state.f.pack) return false;
+  if (state.f.dwg && r.drawing_no !== state.f.dwg) return false;
   if (!state.f.q) return true;
   const hay = `${r.test_pack_no} ${r.drawing_no} ${r.deficiency || ''}`.toLowerCase();
   return state.f.q.split(/\s+/).every(w => hay.includes(w));
 }
+// งาน Open ที่ส่งงานแก้แล้วและรอ QC ตรวจ (ใช้ฟิลด์ fix_pending จาก sql/11 — ไม่ใช่สถานะใหม่)
+const isWaiting = (r) => r.status === 'open' && !!r.fix_pending;
+// ผ่านชิปย่อย (Waiting for QC / To fix) หรือไม่
+const subOk = (r) => !state.sub || (state.sub === 'waiting' ? isWaiting(r) : r.status === 'open' && !r.fix_pending);
 // ชิปสถานะพร้อมจำนวน (ชิป "All" = ไม่เลือกสถานะใด) — ตัวเลขมาจากฐานข้อมูล แล้วปรับตามสถานะที่เพิ่งเปลี่ยน/เพิ่มในหน้านี้
 function renderStats() {
   const c = { ...state.counts };
@@ -145,10 +194,20 @@ function renderStats() {
     if (old) c[old] = (c[old] || 1) - 1;
     c[r.status] = (c[r.status] || 0) + 1; state.counted.set(r.id, r.status);
   });
+  state.rows.forEach(r => {                                                   // ปรับตัวเลข "รอ QC" ตามแถวที่เปลี่ยนสถานะ/ส่งงานแก้ในหน้านี้
+    const now = isWaiting(r), old = state.countedW.get(r.id);
+    if (old !== undefined && old !== now) c.waiting = Math.max(0, (c.waiting || 0) + (now ? 1 : -1));
+    state.countedW.set(r.id, now);
+  });
   state.counts = c;
   const all = CHIPS.reduce((n, k) => n + (c[k] || 0), 0);
-  const chip = (k, label, cls, n) => `<button class="btn btn-sm qc-chip ${cls} ${(k ? sel.has(k) : !sel.size) ? 'on' : ''}" data-st="${k}" role="radio" aria-checked="${k ? sel.has(k) : !sel.size}">${label} <b>${n.toLocaleString()}</b></button>`;
-  $('chipRow').innerHTML = chip('', 'All', 'bg-s-all', all) + CHIPS.map(k => chip(k, STATUS[k].label, STATUS[k].cls, c[k] || 0)).join('');
+  // on = เลือกอยู่ไหม · key = data-st (สถานะ) หรือ data-sub (ชิปย่อยของงาน Open)
+  const chip = (attr, k, label, cls, n, on) => `<button class="btn btn-sm qc-chip ${cls} ${on ? 'on' : ''}" ${attr}="${k}" role="radio" aria-checked="${on}">${label} <b>${n.toLocaleString()}</b></button>`;
+  $('chipRow').innerHTML = chip('data-st', '', 'All', 'bg-s-all', all, !sel.size)
+    + CHIPS.map(k => chip('data-st', k, STATUS[k].label, STATUS[k].cls, c[k] || 0, sel.has(k) && !(k === 'open' && state.sub))).join('');
+  $('stageBox').classList.toggle('d-none', !state.fpOn); $('stageBox').classList.toggle('d-flex', state.fpOn);
+  $('stageRow').innerHTML = (state.fpOn ? chip('data-sub', 'waiting', 'Waiting for QC', 'bg-s-fixed', c.waiting || 0, state.sub === 'waiting' && sel.has('open'))
+      + chip('data-sub', 'tofix', 'To fix', 'bg-s-rework', Math.max(0, (c.open || 0) - (c.waiting || 0)), state.sub === 'tofix' && sel.has('open')) : '');
 }
 // HTML ของ 1 แถว: ทุกแถวแสดง Test Package/Drawing ครบ แต่ค่าที่ซ้ำกับแถวบนจะจาง (rep) และมีเส้นแบ่ง (หนา = Test Package ใหม่, บาง = Drawing ใหม่)
 // data-label ใช้แสดงป้ายกำกับเมื่อจอแคบ (ตารางเปลี่ยนเป็นการ์ด ดู app.css)
@@ -156,13 +215,13 @@ function rowHtml(r) {
   const dwgKey = r.test_pack_no + '|' + r.drawing_id;
   const newPack = r.test_pack_no !== ctx.pack, newDwg = dwgKey !== ctx.dwg;
   ctx.pack = r.test_pack_no; ctx.dwg = dwgKey;
-  return `<tr tabindex="0" role="button" class="qc-row st-${r.status} ${newPack ? 'first-pack' : newDwg ? 'new-dwg' : ''}" data-id="${r.id}">
-    <td class="c-pack ${newPack ? '' : 'rep'}" data-label="Test Package No.">${newPack ? `<b>${esc(r.test_pack_no)}</b>` : esc(r.test_pack_no)}</td>
-    <td class="c-dwg ${newDwg ? '' : 'rep'}" data-label="Drawing No.">${newDwg ? `<b>${esc(r.drawing_no)}</b>` : esc(r.drawing_no)}</td>
+  return `<tr tabindex="0" class="qc-row st-${r.status} ${newPack ? 'first-pack' : newDwg ? 'new-dwg' : ''}" data-id="${r.id}">
+    <td class="c-pack text-center ${newPack ? '' : 'rep'}" data-label="Test Package No.">${newPack ? `<b>${packLabel(r.test_pack_no)}</b>` : packLabel(r.test_pack_no)}</td>
+    <td class="c-dwg text-center ${newDwg ? '' : 'rep'}" data-label="Drawing No.">${newDwg ? `<b>${esc(r.drawing_no)}</b>` : esc(r.drawing_no)}</td>
     <td class="c-item text-center text-muted">${esc(r.item_no ?? '')}</td>
-    <td class="c-desc">${esc(r.deficiency || '(no description)')}</td>
+    <td class="c-desc text-left">${esc(r.deficiency || '(no description)')}</td>
     <td class="c-cat text-center">${r.category ? `<span class="badge badge-${CAT_CLS[r.category] || 'light'}">${esc(r.category)}</span>` : ''}</td>
-    <td class="c-status text-center"><span class="badge-status ${STATUS[r.status].cls}" title="${STATUS[r.status].code}">${STATUS[r.status].label}</span></td></tr>`;
+    <td class="c-status text-center">${isWaiting(r) ? `<span class="badge-status bg-s-fixed" title="Fix submitted — waiting for QC to check">Fix submitted</span>` : `<span class="badge-status ${STATUS[r.status].cls}" title="${STATUS[r.status].code}">${STATUS[r.status].label}</span>`}</td></tr>`;
 }
 // วาดแถวเพิ่มจาก viewRows ต่อท้ายตาราง n แถว
 function appendRows(n) {
@@ -188,24 +247,34 @@ function fill() {
 function applyFilters() {
   renderStats();
   const body = $('qcRows');
-  viewRows = state.rows.filter(r => matchQ(r) && (!sel.size || sel.has(r.status)));
+  fillPackDrawing(true);
+  viewRows = state.rows.filter(r => matchQ(r) && (!sel.size || sel.has(r.status)) && subOk(r));
   body.innerHTML = ''; rendered = 0; ctx = { pack: null, dwg: null };
   if (!viewRows.length) {
     body.innerHTML = loading ? '<tr class="qc-empty"><td colspan="6" class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm mr-2"></span>Loading...</td></tr>'
-      : `<tr class="qc-empty"><td colspan="6" class="text-center text-muted py-4">${state.rows.length ? 'No items in the selected status' : 'No items yet'}</td></tr>`;
+      : `<tr class="qc-empty"><td colspan="6" class="text-center text-muted py-4">${state.rows.length ? 'No items in the selected status' : (canQC ? 'No punch items yet. Click Add Punch Item to create the first one.' : 'No punch items assigned yet.')}</td></tr>`;
   } else appendRows(PAGE);
   paintInfo(); fill();
 }
 
 // ---------- events ----------
 // กดชิปสถานะ: เลือกได้ทีละอัน (All / Open / Close / Cancelled)
-$('chipRow').addEventListener('click', (e) => {
+const onChip = (e) => {
   const b = e.target.closest('.qc-chip'); if (!b) return;
-  const k = b.dataset.st;
-  if ((k ? sel.has(k) : !sel.size)) return;                               // เลือกได้อันเดียว: กดอันที่เลือกอยู่แล้วไม่ทำอะไร
-  sel.clear(); if (k) sel.add(k);
-  renderStats(); loadData();                                                // เปลี่ยนสถานะ → โหลดแถวของสถานะนั้นจากฐานข้อมูล
-});
+  const sub = b.dataset.sub, k = b.dataset.st;
+  const onlyOpen = sel.size === 1 && sel.has('open');
+  if (sub) {                                                              // ชิปย่อยของงาน Open: เลือก Open ให้อัตโนมัติ แล้วกรองต่อฝั่งเบราว์เซอร์
+    if (state.sub === sub && onlyOpen) { state.sub = ''; applyFilters(); return; }          // กดซ้ำ = ยกเลิกชิปย่อย กลับไปดู Open ทั้งหมด
+    state.sub = sub; sel.clear(); sel.add('open');
+    if (onlyOpen) { applyFilters(); } else { renderStats(); loadData(); }
+    return;
+  }
+  if (!state.sub && (k ? sel.has(k) : !sel.size)) return;                 // เลือกได้อันเดียว: กดอันที่เลือกอยู่แล้วไม่ทำอะไร
+  const sameSel = k === 'open' && onlyOpen;                               // จากชิปย่อยกลับมา "Open ทั้งหมด": ไม่ต้องโหลดใหม่
+  state.sub = ''; sel.clear(); if (k) sel.add(k);
+  if (sameSel) applyFilters(); else { renderStats(); loadData(); }                                                // เปลี่ยนสถานะ → โหลดแถวของสถานะนั้นจากฐานข้อมูล
+};
+$('chipRow').addEventListener('click', onChip); $('stageRow').addEventListener('click', onChip);
 // คลิกแถว → เปิดแผงรายละเอียด
 $('qcRows').addEventListener('click', (e) => {
   const tr = e.target.closest('.qc-row'); if (!tr) return;

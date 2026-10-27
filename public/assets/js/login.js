@@ -8,6 +8,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     email: document.getElementById('email').value.trim(),
     password: document.getElementById('password').value,
   });
-  if (error) { err.textContent = 'Sign in failed: ' + error.message; err.classList.remove('d-none'); return; }
+  if (error) { err.textContent = 'Sign in failed. Please check your email and password.'; err.classList.remove('d-none'); return; }
   location.href = 'index.php';
 });

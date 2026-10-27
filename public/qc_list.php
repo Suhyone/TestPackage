@@ -17,6 +17,13 @@ include __DIR__ . '/../app/includes/header.php';
   <button id="btnAdd" class="btn btn-sm btn-info ml-auto d-none"><i class="fas fa-plus"></i> Add Punch Item</button>
 </div>
 
+<?php /* บรรทัดที่ 2: แยกงาน Open ตามขั้น (ซ่อนจนกว่าจะรัน sql/11) — เขียนบอกความหมายก่อนปุ่ม */ ?>
+<div class="d-none flex-wrap align-items-center mb-2" id="stageBox" style="gap:8px">
+  <span class="small text-muted">Open items by stage:</span>
+  <div class="d-flex flex-wrap" id="stageRow" style="gap:6px" role="radiogroup" aria-label="Open items by stage"></div>
+  <span class="small text-muted"><b>To fix</b> = not fixed yet &middot; <b>Waiting for QC</b> = fix submitted, QC to check. Click again to clear.</span>
+</div>
+
 <?php /* ค้นหา + Skid */ ?>
 <div class="d-flex flex-wrap align-items-center mb-2" style="gap:8px">
   <div class="input-group input-group-sm" style="max-width:360px">
@@ -24,14 +31,16 @@ include __DIR__ . '/../app/includes/header.php';
     <input id="qSearch" class="form-control" placeholder="Search Test Package No. / Drawing / Description">
   </div>
   <select id="fSkid" class="form-control form-control-sm w-auto" title="Skid"></select>
+  <select id="fPack" class="form-control form-control-sm w-auto" title="Test Package No." aria-label="Test Package No."></select>
+  <select id="fDrawing" class="form-control form-control-sm w-auto" title="Drawing No." aria-label="Drawing No."></select>
   <span class="small text-muted ml-auto" id="rowInfo"></span>
-  <button id="btnCsv" class="btn btn-sm btn-success d-none"><i class="fas fa-file-excel"></i> Export CSV</button>
+  <button id="btnCsv" class="btn btn-sm btn-outline-secondary d-none"><i class="fas fa-file-excel"></i> Export CSV</button>
 </div>
 
 <?php /* รายการงาน: 4 คอลัมน์ คลิกแถวเพื่อเปิดรายละเอียด */ ?>
 <div class="card"><div class="table-responsive qc-wrap">
   <table class="table table-hover mb-0 qc-table">
-    <thead><tr><th style="width:210px">Test Package No.</th><th style="width:190px">Drawing No.</th><th style="width:70px" class="text-center">Item</th><th>Punch Item Description</th><th style="width:90px" class="text-center">Category</th><th style="width:110px" class="text-center">Status</th></tr></thead>
+    <thead><tr><th style="width:210px" class="text-center">Test Package No.</th><th style="width:190px" class="text-center">Drawing No.</th><th style="width:70px" class="text-center">Item</th><th class="text-left">Punch Item Description</th><th style="width:90px" class="text-center">Category</th><th style="width:140px" class="text-center">Status</th></tr></thead>
     <tbody id="qcRows"></tbody>
   </table>
   <?php /* ท้ายตาราง: เลื่อนมาถึงตรงนี้ JS จะวาดแถวเพิ่มเอง (ไม่มีปุ่ม Show more) */ ?>

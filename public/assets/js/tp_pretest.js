@@ -36,7 +36,7 @@ function pretestSummary() {
 function pretestGateHtml() {
   if (pretest.missing) return `<div class="alert alert-warning py-2 small mb-3" role="status">Run <code>sql/07_pretest_checklist.sql</code> in the Supabase SQL Editor to enable the pre-test checklist.</div>`;
   const s = pretestSummary();
-  if (s.no) return `<div class="alert alert-danger py-2 small mb-3" role="status"><i class="fas fa-ban"></i> Pre-test checklist <b>not ready</b>: ${s.no} item${s.no > 1 ? 's' : ''} answered NO. Close the punch items raised before the pressure test.</div>`;
+  if (s.no) return `<div class="alert alert-danger py-2 small mb-3" role="status"><i class="fas fa-ban"></i> Pre-test checklist <b>not ready</b>: ${s.no} item${s.no > 1 ? 's' : ''} answered NO. Close the punch items raised, then change each answer to YES or N/A before the pressure test.</div>`;
   if (s.unanswered) return `<div class="alert alert-warning py-2 small mb-3" role="status"><i class="fas fa-hourglass-half"></i> Pre-test checklist <b>incomplete</b>: ${s.unanswered} of ${s.total} items not answered yet.</div>`;
   return `<div class="alert alert-success py-2 small mb-3" role="status"><i class="fas fa-check-circle"></i> Pre-test checklist <b>complete</b> (${s.yes} YES, ${s.na} N/A).</div>`;
 }
@@ -48,14 +48,14 @@ function renderPretest() {
   const dis = canQC ? '' : ' disabled';
   const btn = (id, v, label, cls, cur) => `<label class="btn btn-sm btn-outline-${cls}${cur === v ? ' active' : ''}${canQC ? '' : ' disabled'}">
     <input type="radio" name="pt_${id}" value="${v}" data-pt="${id}"${cur === v ? ' checked' : ''}${dis}>${label}</label>`;
-  const sec = (s) => `<h6 class="text-muted small text-uppercase mt-3 mb-2">${esc(s.title)}</h6>
+  const sec = (s) => `<div class="d-flex align-items-center mt-3 mb-2"><h6 class="text-muted small text-uppercase mb-0">${esc(s.title)}</h6>${canQC && pretest.tpl.some(t => t.section === s.key && !pretest.ans.has(t.id)) ? `<button type="button" class="btn btn-sm btn-outline-success ml-auto" data-allyes="${s.key}"><i class="fas fa-check-double"></i> Set unanswered to YES</button>` : ""}</div>
     <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th style="width:56px">No.</th><th>Description</th><th style="width:190px" class="text-center">Status</th><th style="width:28%">Remarks</th></tr></thead><tbody>
     ${pretest.tpl.filter(t => t.section === s.key).map(t => { const a = pretest.ans.get(t.id), cur = a?.answer;
-      return `<tr${cur === 'no' ? ' class="table-danger"' : ''}><td>${t.seq}</td><td>${esc(t.text)}</td>
+      return `<tr${cur === 'no' ? ' class="table-danger"' : !cur ? ' class="pt-unans"' : ''}><td>${t.seq}</td><td>${esc(t.text)}</td>
         <td class="text-center"><div class="btn-group btn-group-toggle">${btn(t.id, 'yes', 'YES', 'success', cur)}${btn(t.id, 'no', 'NO', 'danger', cur)}${btn(t.id, 'na', 'N/A', 'secondary', cur)}</div></td>
         <td><input class="form-control form-control-sm" data-ptr="${t.id}" value="${esc(a?.remark ?? '')}" aria-label="Remarks for item ${t.seq}"${cur && canQC ? '' : ' disabled'}></td></tr>`; }).join('')}
     </tbody></table></div>`;
-  box.innerHTML = `${pretestGateHtml()}${PT_SECTIONS.map(sec).join('')}
+  box.innerHTML = `${pretestGateHtml()}${pretestSummary().unanswered ? `<button type="button" class="btn btn-sm btn-outline-info mb-1" data-nextun="1"><i class="fas fa-arrow-down"></i> Go to next unanswered</button>` : ''}${PT_SECTIONS.map(sec).join('')}
     <div class="small text-muted mt-3">When a status is NO, a Category A punch item is raised automatically and the pressure test shall not proceed.${canQC ? '' : ' (View only)'}</div>
     <div class="small mt-2" id="ptMsg" role="status" aria-live="polite"></div>`;
 }
@@ -72,6 +72,9 @@ async function raisePretestPunch(t, remark) {
   if (old) {
     if (old.status === 'cancelled') {
       const { error } = await sb.from('punch_items').update({ status: 'open', cancel_by: null, cancel_date: null, cancel_remark: null, remarks: remark || null }).eq('id', old.id);
+      if (error) throw error;
+    } else if (old.status === 'open') {                               // แก้หมายเหตุของข้อที่ยังเป็น NO → ตาม punch ที่ออกไว้
+      const { error } = await sb.from('punch_items').update({ remarks: remark || null }).eq('id', old.id);
       if (error) throw error;
     }
     return old.id;
@@ -101,12 +104,42 @@ async function savePretestAnswer(tid, answer, remark) {
     punch_item_id: punchId, answered_by: me.name, answered_at: new Date().toISOString() }, { onConflict: 'test_pack_id,template_id' }).select().single();
   if (error) throw error;
   pretest.ans.set(tid, data);
-  await reloadItems(); renderHead(); renderPunch(); renderSoon(); renderPretest();
+  await afterPretestChange();
 }
+// หลังคำตอบเปลี่ยน: รีเฟรชหน้าให้ตรงฐานข้อมูล · หน้า Field (field_pack.js) ประกาศฟังก์ชันชื่อเดียวกันไว้ทับเพื่อวาดหน้าของตัวเอง
+async function afterPretestChange() { await reloadItems(); renderHead(); renderPunch(); renderSoon(); renderPretest(); }
 
+// ตั้งคำตอบ YES ให้ทุกข้อที่ยังไม่ได้ตอบในหมวดเดียว (ข้อที่ตอบแล้ว รวมถึง NO และ N/A ไม่ถูกแตะ) บันทึกรวมครั้งเดียว
+// ใช้ ignoreDuplicates: ถ้ามีคนตอบข้อนั้นไปแล้วระหว่างนี้ (เช่น ตอบ NO) คำตอบของเขาจะไม่ถูกทับ — คืน { set, skipped } แล้วโหลดคำตอบล่าสุดจากฐานข้อมูลมาแสดง
+async function setSectionYes(section) {
+  const ids = pretest.tpl.filter(t => t.section === section && !pretest.ans.has(t.id)).map(t => t.id);
+  if (!ids.length) return { set: 0, skipped: 0 };
+  const now = new Date().toISOString();
+  const { data, error } = await sb.from('pretest_items').upsert(ids.map(tid => ({ test_pack_id: tpId, template_id: tid, answer: 'yes', remark: null, punch_item_id: null, answered_by: me.name, answered_at: now })),
+    { onConflict: 'test_pack_id,template_id', ignoreDuplicates: true }).select();
+  if (error) throw error;
+  const skipped = ids.length - (data?.length || 0);
+  if (skipped) await loadPretest();                                  // มีคนตอบข้อเหล่านั้นไปก่อน → ใช้คำตอบจริงจากฐานข้อมูล
+  else (data || []).forEach(r => pretest.ans.set(r.template_id, r));
+  await afterPretestChange();
+  return { set: data?.length || 0, skipped };
+}
 // เหตุการณ์: เลือก YES/NO/N/A หรือแก้หมายเหตุ (ผูกครั้งเดียวที่กล่องแท็บ)
 function bindPretest() {
   const box = $('tab-pretest'), msg = (t, ok = true) => { const e = $('ptMsg'); if (e) { e.textContent = t; e.className = 'small mt-2 ' + (ok ? 'text-success' : 'text-danger'); } };
+  box.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-nextun]')) {                               // เลื่อนไปข้อแรกที่ยังไม่ได้ตอบ
+      const row = box.querySelector('tr.pt-unans'); if (!row) return;
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' }); row.classList.add('table-warning'); setTimeout(() => row.classList.remove('table-warning'), 1800); return;
+    }
+    const b = e.target.closest('[data-allyes]'); if (!b || !canQC) return;
+    const n = pretest.tpl.filter(t => t.section === b.dataset.allyes && !pretest.ans.has(t.id)).length;
+    if (!confirm(`Set ${n} unanswered item${n > 1 ? 's' : ''} to YES?
+Items already answered (including NO and N/A) will not be changed.`)) return;
+    box.querySelectorAll('input,button').forEach(i => i.disabled = true); msg('Saving…');
+    try { const { set, skipped } = await setSectionYes(b.dataset.allyes); msg(`${set} item${set === 1 ? '' : 's'} set to YES${skipped ? `; ${skipped} had just been answered by someone else and kept as they were` : ''}`, !skipped); }
+    catch (err) { renderPretest(); msg('Could not save: ' + friendlyErr(err), false); }
+  });
   box.addEventListener('change', async (e) => {
     if (!canQC) return;
     const radio = e.target.closest('[data-pt]'), rem = e.target.closest('[data-ptr]');
@@ -115,6 +148,6 @@ function bindPretest() {
     const answer = radio ? radio.value : pretest.ans.get(tid)?.answer; if (!answer) return;
     box.querySelectorAll('input').forEach(i => i.disabled = true); msg('Saving…');
     try { await savePretestAnswer(tid, answer, row.value.trim()); msg('Saved'); }
-    catch (err) { renderPretest(); msg('Could not save: ' + (err.message || err), false); }
+    catch (err) { renderPretest(); msg('Could not save: ' + friendlyErr(err), false); }
   });
 }

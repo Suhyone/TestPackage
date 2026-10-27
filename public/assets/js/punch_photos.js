@@ -34,7 +34,7 @@ async function uploadPhotos(files, folder, onProgress) {
     const ext = blob.type === 'image/jpeg' ? 'jpg' : ((f.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin');
     const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { error } = await sb.storage.from('punch-photos').upload(path, blob, { contentType: blob.type || f.type || 'application/octet-stream' });
-    if (error) throw new Error(`Upload of "${f.name || 'photo'}" failed: ${error.message}`);
+    if (error) throw Object.assign(new Error(error.message), { friendly: `Upload of "${f.name || 'photo'}" failed: ${friendlyErr(error)}` });
     paths.push(path); onProgress?.(paths.length, files.length);
   }
   return paths;

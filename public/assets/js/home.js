@@ -10,7 +10,7 @@ const MODULES = [
     href: () => 'qc_list.php',
     async load() {
       const sts = ['open', 'close', 'cancelled'], cls = { open: 'bg-s-open', close: 'bg-s-approved', cancelled: 'bg-s-cancelled' };
-      const label = { open: 'Open', close: 'Close', cancelled: 'Cancelled' };
+      const label = { open: 'Open', close: 'Closed', cancelled: 'Cancelled' };
       const res = await Promise.all(sts.map(st => sb.from('punch_items').select('id', { count: 'exact', head: true }).eq('status', st)));
       const bad = res.find(r => r.error); if (bad) throw bad.error;
       const n = Object.fromEntries(sts.map((st, i) => [st, res[i].count ?? 0]));
@@ -44,6 +44,6 @@ appReady.then(({ me }) => {
   const mods = MODULES.filter(m => !m.roles || m.roles.includes(me.role));
   document.getElementById('modules').innerHTML = mods.map(m => cardHtml(m, me)).join('');
   mods.forEach(m => m.load().then(d => paint(m, d)).catch(e => {          // โหลดแต่ละงานอิสระ
-    document.querySelector(`#mod-${m.key} .mod-tiles`).innerHTML = `<div class="col-12 text-danger small">Could not load: ${esc(e.message || e)}</div>`;
+    document.querySelector(`#mod-${m.key} .mod-tiles`).innerHTML = `<div class="col-12 text-danger small">Could not load: ${esc(friendlyErr(e))}</div>`;
   }));
 });

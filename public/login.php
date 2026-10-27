@@ -13,9 +13,9 @@ include __DIR__ . '/../app/includes/header.php';
       <div id="loginErr" class="alert alert-danger d-none"></div>
       <?php /* ฟอร์มอีเมล/รหัสผ่าน — login.js ส่งไปตรวจกับ Supabase Auth */ ?>
       <form id="loginForm">
-        <div class="input-group mb-3"><input type="email" id="email" class="form-control" placeholder="Email" required>
+        <div class="input-group mb-3"><input type="email" id="email" class="form-control" placeholder="Email" aria-label="Email" autocomplete="username" required>
           <div class="input-group-append"><div class="input-group-text"><span class="fas fa-envelope"></span></div></div></div>
-        <div class="input-group mb-3"><input type="password" id="password" class="form-control" placeholder="Password" required>
+        <div class="input-group mb-3"><input type="password" id="password" class="form-control" placeholder="Password" aria-label="Password" autocomplete="current-password" required>
           <div class="input-group-append"><div class="input-group-text"><span class="fas fa-lock"></span></div></div></div>
         <button class="btn btn-info btn-block" type="submit">Sign in</button>
       </form>

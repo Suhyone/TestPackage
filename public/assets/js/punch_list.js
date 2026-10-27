@@ -15,6 +15,7 @@ const opts = (all, list) => `<option value="">${all}</option>` + list.map(v => `
 // ---------- init ----------
 // เริ่มหน้า: โหลด master data + รายการ Test Pack, เติมตัวกรอง, ผูกเหตุการณ์, สร้างตาราง แล้วโหลดข้อมูล
 async function init() {
+  prefillProjectSelect();                                                   // แสดง Project No. ที่จำไว้ทันที ไม่รอข้อมูล
   ({ me } = await appReady);
   if (me.role !== 'admin') { location.replace('qc_list.php'); return; }     // QC / เจ้าหน้าที่ใช้หน้าแบบย่อ qc_list.php
   canQC = ['admin', 'qc'].includes(me.role);
@@ -29,8 +30,7 @@ async function init() {
   state.packs = packs;
 
   const projects = [...new Set(packs.map(p => p.project_no))].sort();
-  $('fProject').innerHTML = opts('All', projects);
-  $('projectBox').classList.replace('d-none', 'd-flex');              // Project No. อยู่ที่ header ข้างปุ่ม Home
+  state.f.project = fillProjectSelect(projects);                      // Project No. อยู่ที่ header ข้างปุ่ม Home (ใช้ค่าที่จำไว้)
   fillSkids();
   $('fStatus').innerHTML = '<option value="">All</option>' + Object.entries(STATUS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
   $('fCategory').innerHTML = opts('All', state.categories.map(c => c.code));
@@ -449,7 +449,7 @@ function buildTable() {
     rowData: [], pinnedBottomRowData: ed ? [newRow] : [], embedFullWidthRows: true,
     getRowId: (p) => p.data._new ? 'new' : (p.data._key || 'i' + p.data.id),
     isFullWidthRow: (p) => !!p.rowNode.data?._type, fullWidthCellRenderer: GroupRenderer,
-    getRowHeight: (p) => p.data?._type ? 38 : undefined,
+    getRowHeight: (p) => p.data?._type ? Math.round(38 * uiScale()) : undefined,   // หัวกลุ่มสูงตามขนาดตัวอักษร (Aa)
     getRowClass: (p) => p.data?._new ? 'new-row' : p.data?._type ? '' : 'st-' + p.data.status + (p.data.status === 'cancelled' ? ' row-cancelled' : ''),
     rowSelection: 'single', isRowSelectable: (p) => !p.data?._type, stopEditingWhenCellsLoseFocus: true,
     overlayNoRowsTemplate: '<span class="text-muted">No items match the filters</span>',
@@ -614,7 +614,7 @@ $('btnReset').onclick = () => {
   ['fStatus', 'fCategory', 'fDiscipline'].forEach(i => $(i).value = ''); $('qSearch').value = '';
   state.colFilters = {}; gridApi.refreshHeader();
   document.querySelectorAll('#typeTabs .nav-link').forEach(x => x.classList.toggle('active', x.dataset.type === 'all'));
-  if (state.f.project || state.f.skid) { state.f.project = state.f.skid = ''; $('fProject').value = ''; fillSkids(); loadData(); } else applyFilters();
+  if (state.f.project || state.f.skid) { state.f.project = state.f.skid = ''; $('fProject').value = ''; projPref.set(''); fillSkids(); loadData(); } else applyFilters();
 };
 // ปุ่ม Export CSV และตัวเลือกจัดกลุ่มชั้นที่ 1/2
 $('btnCsv').onclick = exportCsv;

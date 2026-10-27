@@ -6,8 +6,8 @@
 // สถานะ punch ของ pack ตามกฎของฟอร์ม: A ที่ยัง Open = ห้ามทดสอบแรงดัน · B ที่ Open = ทำต่อได้ตามดุลยพินิจ PM
 // (กฎเดียวกับคอลัมน์ punch_state ใน view v_test_packs — sql/06_test_package_register.sql)
 const PSTATE = {
-  blocked: { label: 'Blocked · A open', cls: 'bg-s-rework',    hint: 'Category A punch still open — pressure test not allowed' },
-  open:    { label: 'B open',           cls: 'bg-s-fixed',     hint: 'Only Category B punch open' },
+  blocked: { label: 'Blocked · Open A', cls: 'bg-s-rework',    hint: 'Category A punch still open — pressure test not allowed' },
+  open:    { label: 'Open B',           cls: 'bg-s-fixed',     hint: 'Only Category B punch open' },
   clear:   { label: 'All closed',       cls: 'bg-s-approved',  hint: 'All punch items closed' },
   none:    { label: 'No punch items',   cls: 'bg-s-cancelled', hint: 'No punch items raised' },
 };

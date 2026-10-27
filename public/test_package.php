@@ -3,8 +3,8 @@ declare(strict_types=1);
 /*
  * test_package.php — หน้ารายละเอียดของ Test Package 1 ใบ (test_package.php?id=...) แบบแท็บตามชีตในฟอร์ม (โครง HTML เท่านั้น)
  * ตรรกะอยู่ใน assets/js/tp_detail.js
- *   Info · Pre-test (tp_pretest.js) · Punch · Sign-off  ใช้งานได้แล้ว
- *   Contents · ISO / Spool · Pressure test  เป็นแท็บที่เตรียมไว้ (ทำในเฟสถัดไป ดู docs/page_roadmap.md)
+ *   ทุกแท็บใช้งานได้: Info · Contents / ISO (tp_data.js) · Pre-test (tp_pretest.js) · Punch · Pressure test (tp_pressure.js) · Sign-off (tp_signature.js)
+ *   ปุ่ม "Field mode" เปิดหน้างานของ pack นี้สำหรับแท็บเล็ต (field_pack.php)
  */
 // ตั้งชื่อหน้า + เมนูที่ active (ใช้เมนู Test Packages) แล้วโหลดส่วนหัว
 $pageTitle = 'Test Package'; $active = 'test_packages';
@@ -26,17 +26,20 @@ include __DIR__ . '/../app/includes/header.php';
     <h4 class="mb-0" id="hNo"></h4>
     <span id="hState"></span>
     <span class="text-muted" id="hSub"></span>
-    <div class="ml-auto d-flex" style="gap:6px" id="hCounts"></div>
+    <div class="ml-auto d-flex align-items-center flex-wrap" style="gap:6px">
+      <a class="btn btn-sm btn-outline-info" id="hField" href="field.php"><i class="fas fa-tablet-alt"></i> Field mode</a>
+      <span class="d-flex" style="gap:6px" id="hCounts"></span>
+    </div>
   </div>
 
   <?php /* แท็บตามชีตในฟอร์ม: Info / Contents / ISO / Pre-test / Punch / Pressure test / Sign-off */ ?>
   <ul class="nav nav-tabs" id="tpTabs" role="tablist">
     <li class="nav-item"><a class="nav-link active" id="t-info" data-toggle="tab" href="#tab-info" role="tab" aria-controls="tab-info" aria-selected="true">Info</a></li>
-    <li class="nav-item"><a class="nav-link" id="t-contents" data-toggle="tab" href="#tab-contents" role="tab" aria-controls="tab-contents" aria-selected="false">Contents <span class="badge badge-light border">soon</span></a></li>
-    <li class="nav-item"><a class="nav-link" id="t-iso" data-toggle="tab" href="#tab-iso" role="tab" aria-controls="tab-iso" aria-selected="false">ISO / Spool <span class="badge badge-light border">soon</span></a></li>
+    <li class="nav-item"><a class="nav-link" id="t-contents" data-toggle="tab" href="#tab-contents" role="tab" aria-controls="tab-contents" aria-selected="false">Contents</a></li>
+    <li class="nav-item"><a class="nav-link" id="t-iso" data-toggle="tab" href="#tab-iso" role="tab" aria-controls="tab-iso" aria-selected="false">ISO / Spool</a></li>
     <li class="nav-item"><a class="nav-link" id="t-pretest" data-toggle="tab" href="#tab-pretest" role="tab" aria-controls="tab-pretest" aria-selected="false">Pre-test</a></li>
     <li class="nav-item"><a class="nav-link" id="t-punch" data-toggle="tab" href="#tab-punch" role="tab" aria-controls="tab-punch" aria-selected="false">Punch</a></li>
-    <li class="nav-item"><a class="nav-link" id="t-pressure" data-toggle="tab" href="#tab-pressure" role="tab" aria-controls="tab-pressure" aria-selected="false">Pressure test <span class="badge badge-light border">soon</span></a></li>
+    <li class="nav-item"><a class="nav-link" id="t-pressure" data-toggle="tab" href="#tab-pressure" role="tab" aria-controls="tab-pressure" aria-selected="false">Pressure test</a></li>
     <li class="nav-item"><a class="nav-link" id="t-signoff" data-toggle="tab" href="#tab-signoff" role="tab" aria-controls="tab-signoff" aria-selected="false">Sign-off</a></li>
   </ul>
 
@@ -53,7 +56,7 @@ include __DIR__ . '/../app/includes/header.php';
       </form>
     </div>
 
-    <?php /* แท็บที่เตรียมไว้ (เฟสถัดไป): แสดงว่าจะมีอะไร */ ?>
+    <?php /* Contents / ISO = ข้อมูลจากชุด dataset (tp_data.js) · Pre-test = tp_pretest.js · Pressure test = เตรียมไว้เฟสถัดไป */ ?>
     <div class="tab-pane fade" id="tab-contents" role="tabpanel" aria-labelledby="t-contents"></div>
     <div class="tab-pane fade" id="tab-iso" role="tabpanel" aria-labelledby="t-iso"></div>
     <div class="tab-pane fade" id="tab-pressure" role="tabpanel" aria-labelledby="t-pressure"></div>
@@ -66,10 +69,11 @@ include __DIR__ . '/../app/includes/header.php';
       <form id="punchForm" autocomplete="off" novalidate>
         <div class="form-row" id="punchFields"></div>
         <div class="d-flex align-items-center mb-3" style="gap:10px">
-          <button type="submit" class="btn btn-outline-info btn-sm" id="punchSave">Save report details</button>
+          <button type="submit" class="btn btn-info btn-sm" id="punchSave">Save report details</button>
           <span class="small" id="punchMsg" role="status" aria-live="polite"></span>
           <a class="btn btn-sm btn-outline-info ml-auto" id="punchReport" href="punch_report.php"><i class="fas fa-print"></i> Print report</a>
-          <a class="btn btn-sm btn-info" id="punchLink" href="qc_list.php"><i class="fas fa-external-link-alt"></i> Open in Punch List</a>
+          <a class="btn btn-sm btn-info d-none" id="punchAdd" href="qc_list.php"><i class="fas fa-plus"></i> Add punch item</a>
+          <a class="btn btn-sm btn-outline-info" id="punchLink" href="qc_list.php"><i class="fas fa-external-link-alt"></i> Open in Punch List</a>
         </div>
       </form>
       <div class="table-responsive"><table class="table table-sm table-hover mb-0" id="punchTable">
@@ -94,6 +98,6 @@ include __DIR__ . '/../app/includes/header.php';
 
 <?php
 // สคริปต์ของหน้านี้: ตัวช่วยร่วม (punch_common.js) แล้วตรรกะหน้ารายละเอียด
-$pageScripts = ['assets/js/punch_common.js', 'assets/js/tp_common.js', 'assets/js/tp_pretest.js', 'assets/js/tp_detail.js'];
+$pageScripts = ['assets/js/punch_common.js', 'assets/js/punch_photos.js', 'assets/js/tp_common.js', 'assets/js/tp_signature.js', 'assets/js/tp_pretest.js', 'assets/js/tp_pressure.js', 'assets/js/tp_data.js', 'assets/js/tp_detail.js'];
 include __DIR__ . '/../app/includes/footer.php';
 ?>
