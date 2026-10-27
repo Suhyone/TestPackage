@@ -384,3 +384,10 @@ div.ag-theme-alpine {   /* div. = เพิ่มน้ำหนักให้�
   #tpHead .btn-group-toggle .btn-sm { min-width: 3.5rem; justify-content: center; }
   #tpHead table td, #tpHead table th { padding-top: .6rem; padding-bottom: .6rem; }
 }
+
+/* Field mode: ปุ่มหลัก/ปุ่มกรอบสีเดียวกับส่วนอื่นของระบบ (#0e7490 ตัวอักษรขาว >= 4.5:1) แทนสีฟ้าอ่อนของ Bootstrap ที่ contrast ต่ำ */
+.fd-page .btn-info, #fpModal .btn-info { background: #0e7490; border-color: #0e7490; color: #fff; }
+.fd-page .btn-info:hover, #fpModal .btn-info:hover { background: #0b5f76; border-color: #0b5f76; color: #fff; }
+.fd-page .btn-outline-info, #fpModal .btn-outline-info { color: #0e7490; border-color: #0e7490; }
+.fd-page .btn-outline-info:hover, .fd-page .btn-outline-info.active, #fpModal .btn-outline-info:hover, #fpModal .btn-outline-info.active { background: #0e7490; color: #fff; }
+.fd-page .badge-info, .fd-page .fd-cat.badge-info { background: #0e7490; color: #fff; }

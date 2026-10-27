@@ -12,7 +12,7 @@
 const tpId = Number(new URLSearchParams(location.search).get('id'));
 let tp = null, me = null, canQC = false, fpItems = [], fpCats = [], fpDiscs = [], fpDrawings = [];
 let pending = {};                                                        // คำตอบ Pre-test ที่ยังส่งไม่สำเร็จ { template_id: { answer, remark } }
-let flushing = false;
+let flushing = false, fpLoadFailed = false;                              // fpLoadFailed = โหลดรายการ punch ไม่สำเร็จ → ไม่รู้สถานะ gate ห้ามขึ้นเขียว
 
 // หน้านี้วาดเองหลังคำตอบเปลี่ยน (ทับฟังก์ชันชื่อเดียวกันใน tp_pretest.js ที่วาดหน้าออฟฟิศ)
 async function afterPretestChange() { await reloadItems(); renderAll(); }
@@ -23,7 +23,8 @@ const isNetErr = (e) => !navigator.onLine || /failed to fetch|network|timeout|lo
 // ---------- ข้อมูล ----------
 async function reloadItems() {
   const r = await sb.from('v_punch_items').select('*').eq('test_pack_id', tpId).order('item_no').order('id');
-  fpItems = r.data || [];
+  if (r.error) { fpLoadFailed = true; throw r.error; }
+  fpLoadFailed = false; fpItems = r.data || [];
 }
 const openCounts = () => {
   const live = fpItems.filter(i => i.status !== 'cancelled'), open = live.filter(i => i.status === 'open');
@@ -35,11 +36,12 @@ function renderHead() {
   const c = openCounts(), s = pretestSummary(), ptOk = pretest.missing || s.ready;
   $('fpNo').textContent = tp.test_pack_no;
   $('fpSub').textContent = [tp.module_no && `Module ${tp.module_no}`, tp.piping_system && `System ${tp.piping_system}`, tp.piping_name].filter(Boolean).join(' · ');
-  $('fpState').innerHTML = c.openA ? '<span class="badge-status bg-s-rework">Blocked — Category A open</span>'
+  $('fpState').innerHTML = fpLoadFailed ? '<span class="badge-status bg-s-fixed">Status unknown</span>' : c.openA ? '<span class="badge-status bg-s-rework">Blocked — Category A open</span>'
     : !ptOk ? '<span class="badge-status bg-s-fixed">Pre-test not complete</span>' : '<span class="badge-status bg-s-approved">Ready to test</span>';
   $('stPre').textContent = pretest.missing ? '' : `${s.total - s.unanswered}/${s.total}`;
   $('stPunch').textContent = c.open ? `${c.open} open` : '';
-  const gate = c.openA ? `<div class="alert alert-danger py-2 mb-0" role="status"><i class="fas fa-ban"></i> Pressure test is <b>not allowed</b>: ${c.openA} Category A punch item${c.openA > 1 ? 's are' : ' is'} still open.</div>`
+  const gate = fpLoadFailed ? '<div class="alert alert-warning py-2 mb-0" role="status"><i class="fas fa-exclamation-triangle"></i> Could not load the punch items, so the pressure-test status is unknown. Check your connection and reload.</div>'
+    : c.openA ? `<div class="alert alert-danger py-2 mb-0" role="status"><i class="fas fa-ban"></i> Pressure test is <b>not allowed</b>: ${c.openA} Category A punch item${c.openA > 1 ? 's are' : ' is'} still open.</div>`
     : !ptOk ? '<div class="alert alert-warning py-2 mb-0" role="status"><i class="fas fa-hourglass-half"></i> Pressure test is <b>not allowed yet</b>: the pre-test checklist is not complete.</div>'
     : '<div class="alert alert-success py-2 mb-0" role="status"><i class="fas fa-check-circle"></i> Ready for the pressure test.</div>';
   $('fpGate').innerHTML = gate;
@@ -58,7 +60,7 @@ function renderPretestField() {
         const saved = pretest.ans.get(t.id), p = pending[t.id], cur = p?.answer ?? saved?.answer, remark = p ? p.remark : (saved?.remark ?? '');
         const b = (v, label, cls) => `<button type="button" class="btn fd-ans btn-outline-${cls}${cur === v ? ' active' : ''}" data-t="${t.id}" data-a="${v}" aria-pressed="${cur === v}"${dis}>${label}</button>`;
         return `<div class="fd-q${cur === 'no' ? ' is-no' : !cur ? ' is-un' : ''}${p ? ' is-pending' : ''}" data-q="${t.id}">
-          <div class="fd-q-text"><span class="fd-q-no">${t.seq}</span> ${esc(t.text)}${p ? ' <span class="badge badge-warning"><i class="fas fa-clock"></i> not sent</span>' : ''}</div>
+          <div class="fd-q-text"><span class="fd-q-no">${t.seq}</span> ${esc(t.text)}${p ? (p.err ? ` <span class="badge badge-danger"><i class="fas fa-exclamation-circle"></i> not saved: ${esc(p.err)}</span>` : ' <span class="badge badge-warning"><i class="fas fa-clock"></i> not sent</span>') : ''}</div>
           <div class="fd-q-btns">${b('yes', 'YES', 'success')}${b('no', 'NO', 'danger')}${b('na', 'N/A', 'secondary')}</div>
           ${cur ? `<input class="form-control fd-remark" data-r="${t.id}" value="${esc(remark)}" placeholder="${cur === 'no' ? 'What is wrong? (goes into the punch item)' : 'Remarks (optional)'}" aria-label="Remarks for item ${t.seq}"${dis}>` : ''}
         </div>`; }).join('')}`;
@@ -70,15 +72,16 @@ function renderPretestField() {
     <div class="small mt-2" id="fpPtMsg" role="status" aria-live="polite"></div>`;
 }
 const ptMsg = (t, ok = true) => { const e = $('fpPtMsg'); if (e) { e.textContent = t; e.className = 'small mt-2 ' + (ok ? 'text-success' : 'text-danger'); } };
-const savePending = () => Object.keys(pending).length ? FieldDraft.set(tpId, 'pretest', pending) : FieldDraft.clear(tpId, 'pretest');
+const savePending = () => { if (Object.keys(pending).length) FieldDraft.set(tpId, 'pretest', pending); else FieldDraft.clear(tpId, 'pretest'); };
+const draftWarn = () => FieldDraft.available() ? '' : ' (this device could not store the draft — do not close the page)';
 
 // บันทึกคำตอบ 1 ข้อ: สำเร็จ = ล้างร่างข้อนั้น · เน็ตหลุด = เก็บเป็นร่างรอส่ง · error อื่น = แจ้งผู้ใช้
 async function submitAnswer(tid, answer, remark) {
-  if (!navigator.onLine) { pending[tid] = { answer, remark }; savePending(); renderAll(); return ptMsg('Offline — saved on this device, will send when you are back online.', false); }
+  if (!navigator.onLine) { pending[tid] = { answer, remark }; savePending(); renderAll(); return ptMsg('Offline — saved on this device, will send when you are back online.' + draftWarn(), false); }
   try { await savePretestAnswer(tid, answer, remark); delete pending[tid]; savePending(); renderAll(); ptMsg('Saved'); }
   catch (e) {
-    if (isNetErr(e)) { pending[tid] = { answer, remark }; savePending(); renderAll(); ptMsg('Connection problem — saved on this device. Press "Send now" when the signal is back.', false); }
-    else { delete pending[tid]; savePending(); renderAll(); ptMsg('Could not save: ' + friendlyErr(e), false); }
+    if (isNetErr(e)) { pending[tid] = { answer, remark }; savePending(); renderAll(); ptMsg('Connection problem — saved on this device. Press "Send now" when the signal is back.' + draftWarn(), false); }
+    else { pending[tid] = { answer, remark, err: friendlyErr(e) }; savePending(); renderAll(); ptMsg('Could not save: ' + friendlyErr(e) + ' The answer is marked below — tap an answer again to retry.', false); }
   }
 }
 // ส่งคำตอบที่ค้างทีละข้อ (หยุดเมื่อเน็ตยังไม่กลับ)
@@ -87,8 +90,9 @@ async function flushPending() {
   flushing = true;
   try {
     for (const [tid, v] of Object.entries(pending)) {
+      if (v.err) continue;                                               // ล้มเพราะไม่ใช่เครือข่าย: รอผู้ใช้แตะตอบใหม่
       try { await savePretestAnswer(+tid, v.answer, v.remark); delete pending[tid]; savePending(); }
-      catch (e) { if (isNetErr(e)) break; delete pending[tid]; savePending(); ptMsg('One answer could not be saved: ' + friendlyErr(e), false); }
+      catch (e) { if (isNetErr(e)) break; pending[tid] = { ...v, err: friendlyErr(e) }; savePending(); ptMsg('An answer could not be saved: ' + friendlyErr(e), false); }
     }
   } finally { flushing = false; renderAll(); }
 }
@@ -114,7 +118,6 @@ function bindPretestField() {
   box.addEventListener('change', async (e) => {                              // แก้หมายเหตุของข้อที่ตอบแล้ว
     const r = e.target.closest('[data-r]'); if (!r || !canQC) return;
     const tid = +r.dataset.r, cur = pending[tid]?.answer ?? pretest.ans.get(tid)?.answer; if (!cur) return;
-    box.querySelectorAll('button,input').forEach(i => i.disabled = true);
     await submitAnswer(tid, cur, r.value.trim());
   });
 }
@@ -143,12 +146,14 @@ function formHtml() {
     <label>Photos</label><div id="fpPhotos"></div>`;
 }
 let fpCat = '';
+const newKey = () => `FP|${tpId}|${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+let fpKey = newKey();                                                     // รหัสของฟอร์มนี้ (เก็บในร่าง) — ส่งซ้ำหลังเน็ตหลุดจะไม่ได้ item ซ้ำ
 function setCat(v) {
   fpCat = v || '';
   document.querySelectorAll('#fpCat [data-cat]').forEach(b => { const on = b.dataset.cat === fpCat; b.classList.toggle('active', on); b.setAttribute('aria-checked', on); });
   $('fpCatHelp').textContent = fpCats.find(c => c.code === fpCat)?.description || 'Choose the category (required)';
 }
-const readForm = () => ({ drawing: $('fpDrawing').value, newDrawing: $('fpNewDrawing').value, cat: fpCat, disc: $('fpDisc').value, def: $('fpDef').value });
+const readForm = () => ({ key: fpKey, drawing: $('fpDrawing').value, newDrawing: $('fpNewDrawing').value, cat: fpCat, disc: $('fpDisc').value, def: $('fpDef').value });
 const saveDraft = () => FieldDraft.set(tpId, 'punch', readForm());
 function fillDrawings(selectId) {
   $('fpDrawing').innerHTML = fpDrawings.map(d => `<option value="${d.id}">${esc(d.drawing_no)}</option>`).join('') || '<option value="">No drawings yet — type a new Drawing No.</option>';
@@ -161,6 +166,7 @@ async function openForm() {
   fpPicker = makePicker($('fpPhotos'));
   fillDrawings();
   const draft = FieldDraft.get(tpId, 'punch');                              // ร่างที่พิมพ์ค้างไว้
+  fpKey = draft?.key || newKey();
   if (draft) { fillDrawings(draft.drawing); $('fpNewDrawing').value = draft.newDrawing || ''; $('fpDisc').value = draft.disc || ''; $('fpDef').value = draft.def || ''; setCat(draft.cat); }
   else { $('fpDisc').value = fpDiscs.some(x => x.name === 'Piping') ? 'Piping' : ''; setCat(''); }
   $('fpModalMsg').textContent = draft ? 'Restored your unsaved entry. Photos must be added again.' : ''; $('fpModalMsg').className = 'small mr-auto text-muted';
@@ -183,7 +189,9 @@ async function saveForm(keepOpen) {
       if (error) throw error; drawingId = data.id;
     }
     const last = await sb.from('punch_items').select('item_no').eq('drawing_id', drawingId).order('item_no', { ascending: false, nullsFirst: false }).limit(1);
-    const ins = await sb.from('punch_items').insert({ drawing_id: drawingId, item_no: (last.data?.[0]?.item_no || 0) + 1, deficiency: def, category: f.cat, discipline: f.disc || null,
+    const dup = await sb.from('punch_items').select('*').eq('source_key', fpKey).maybeSingle();    // เคย insert สำเร็จแต่คำตอบหาย → ใช้รายการเดิม
+    if (dup.error) throw dup.error;
+    const ins = dup.data ? { data: dup.data } : await sb.from('punch_items').insert({ source_key: fpKey, drawing_id: drawingId, item_no: (last.data?.[0]?.item_no || 0) + 1, deficiency: def, category: f.cat, discipline: f.disc || null,
       status: 'open', punch_by: me.name, punch_date: today(), input_date: today(), created_by: me.id }).select().single();
     if (ins.error) throw ins.error; item = ins.data;
   } catch (e) {                                                              // ยังไม่ได้บันทึก → คงข้อมูลในฟอร์มและร่างไว้
@@ -199,8 +207,9 @@ async function saveForm(keepOpen) {
     } catch (e) { photoErr = friendlyErr(e); }
   }
   btns.forEach(b => b.disabled = false);
-  FieldDraft.clear(tpId, 'punch');
-  await reloadItems(); renderAll();
+  FieldDraft.clear(tpId, 'punch'); fpKey = newKey();
+  try { await reloadItems(); } catch { /* บันทึกสำเร็จแล้ว — แสดงสถานะไม่ทราบแทน */ }
+  renderAll();
   const keep = { drawing: f.drawing, cat: f.cat, disc: f.disc };
   if (keepOpen) {
     const d = await sb.from('drawings').select('id,drawing_no').eq('test_pack_id', tpId).order('drawing_no'); fpDrawings = d.data || [];
@@ -213,7 +222,10 @@ async function saveForm(keepOpen) {
 }
 
 // ---------- วาดทั้งหน้า ----------
-function renderAll() { renderHead(); renderPretestField(); renderPunchField(); }
+function renderAll() {
+  renderHead(); renderPretestField(); renderPunchField();
+  if (!Object.keys(pending).length && !FieldDraft.get(tpId, 'punch')) $('fpDraftBar').classList.add('d-none');
+}
 
 function showDraftBar() {                                                   // มีร่างค้างจากครั้งก่อนไหม
   const un = Object.keys(pending).length, pd = FieldDraft.get(tpId, 'punch');
@@ -235,7 +247,7 @@ async function init() {
   const [cats, discs] = await Promise.all([sb.from('categories').select('*').order('sort_order'), sb.from('disciplines').select('*').order('sort_order'), reloadItems(), loadPretest()]);
   fpCats = cats.data || []; fpDiscs = discs.data || [];
   pending = FieldDraft.get(tpId, 'pretest') || {};
-  $('fpPressureLink').href = `test_package.php?id=${tpId}#pressure`; $('fpSignLink').href = `test_package.php?id=${tpId}#signoff`; $('fpReportLink').href = `punch_report.php?id=${tpId}`;
+  $('fpPressureLink').href = `test_package.php?id=${tpId}#tab-pressure`; $('fpSignLink').href = `test_package.php?id=${tpId}#tab-signoff`; $('fpReportLink').href = `punch_report.php?id=${tpId}`;
   document.title = `${tp.test_pack_no} · Field | BJCHI QA/QC`;
   $('fpPage').classList.remove('d-none');
   watchOnline($('fpNet'), flushPending);
