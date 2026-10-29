@@ -111,7 +111,7 @@ function renderPunch() {
   $('punchAdd').classList.toggle('d-none', !canQC);
   const cat = (c) => c ? `<span class="badge badge-${CAT_CLS[c] || 'light'}">${esc(c)}</span>` : '';
   $('punchRows').innerHTML = items.map(i => `<tr>
-    <td>${esc(i.item_no ?? '')}</td><td>${esc(i.drawing_no)}</td><td>${esc(i.deficiency)}</td>
+    <td>${esc(i.item_no ?? '')}</td><td>${esc(i.drawing_no)}</td><td class="pl-desc">${esc(i.deficiency)}</td>
     <td class="text-center">${cat(i.category)}</td>
     <td class="text-center"><span class="badge-status ${STATUS[i.status]?.cls || ''}">${esc(STATUS[i.status]?.label || i.status)}</span></td>
     <td>${esc(i.bjc_by)}</td><td>${esc(i.qci_by)}</td><td>${esc(i.client_by)}</td></tr>`).join('');

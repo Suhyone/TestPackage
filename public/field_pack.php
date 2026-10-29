@@ -60,8 +60,22 @@ include __DIR__ . '/../app/includes/header.php';
     <div class="modal-footer">
       <span class="small mr-auto" id="fpModalMsg" role="status" aria-live="polite"></span>
       <button type="button" class="btn btn-outline-secondary fd-btn" data-dismiss="modal">Close</button>
-      <button type="button" class="btn btn-outline-info fd-btn" id="fpSaveMore">Save &amp; add another</button>
-      <button type="button" class="btn btn-info fd-btn" id="fpSave">Save</button>
+      <button type="button" class="btn btn-outline-info fd-btn" id="fpSave">Save</button>
+      <button type="button" class="btn btn-info fd-btn" id="fpSaveMore">Save &amp; add another</button>
+    </div>
+  </div></div>
+</div>
+
+<?php /* แผงเล็กของรายการ punch: ดูเลข/สถานะ/รูป + เพิ่มรูป (JS วางเนื้อหา) */ ?>
+<div class="modal fade" id="fpItemModal" tabindex="-1" role="dialog" aria-labelledby="fpItemTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable fd-modal" role="document"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title fd-item-no" id="fpItemTitle"></h5>
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>
+    <div class="modal-body" id="fpItemBody"></div>
+    <div class="modal-footer">
+      <span class="small mr-auto" id="fpItemMsg" role="status" aria-live="polite"></span>
+      <button type="button" class="btn btn-outline-secondary fd-btn" data-dismiss="modal">Close</button>
+      <button type="button" class="btn btn-info fd-btn d-none" id="fpItemSave"><i class="fas fa-upload"></i> Save photos</button>
     </div>
   </div></div>
 </div>

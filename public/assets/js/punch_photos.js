@@ -47,7 +47,7 @@ async function signed(paths) {
   return paths.map(p => by[p] || '');
 }
 // ตัวเลือกรูป: ปุ่ม "เลือกไฟล์" + ปุ่ม "ถ่ายรูป" (บนมือถือ/แท็บเล็ตเปิดกล้องหลังโดยตรง) + ลากไฟล์มาวางได้
-// สะสมได้หลายรูป พร้อมภาพย่อและปุ่มลบ · คืนค่า { files, clear() }
+// สะสมได้หลายรูป พร้อมภาพย่อและปุ่มลบ · คืนค่า { files, addFiles(list), clear() }
 function makePicker(host) {
   const files = [];
   host.innerHTML = `<div class="pk-drop">
@@ -82,5 +82,5 @@ function makePicker(host) {
   drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
   drop.addEventListener('dragleave', () => drop.classList.remove('over'));
   drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); add([...e.dataTransfer.files]); });
-  return { get files() { return files; }, clear() { files.length = 0; err.textContent = ''; paint(); } };
+  return { get files() { return files; }, addFiles(list) { add([...list]); }, clear() { files.length = 0; err.textContent = ''; paint(); } };
 }

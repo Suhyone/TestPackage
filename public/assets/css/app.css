@@ -217,7 +217,7 @@ div.ag-theme-alpine {   /* div. = เพิ่มน้ำหนักให้�
   .qc-row .c-dwg { grid-area: dwg; word-break: break-all; }
   .qc-row .c-item { grid-area: item; text-align: right !important; }
   .qc-row .c-item::before { content: 'Item '; }
-  .qc-row .c-desc { grid-area: desc; font-size: 1rem; padding: 2px 0 !important; }
+  .qc-row .c-desc { white-space: pre-line; grid-area: desc; font-size: 1rem; padding: 2px 0 !important; }
   .qc-row .c-cat { grid-area: cat; align-self: center; }
   .qc-row .c-status { grid-area: status; text-align: right !important; align-self: center; }
   .qc-table .qc-row:hover, .qc-table .qc-row.active { background: #e3f1f6; }
@@ -253,7 +253,7 @@ div.ag-theme-alpine {   /* div. = เพิ่มน้ำหนักให้�
 .rp-list th { height: 13pt; text-align: center; font-weight: 400; }
 .rp-list thead tr:first-child th { height: 13pt; }
 .rp-list td { height: 13pt; line-height: 1.2; padding-top: 1pt; padding-bottom: 1pt; word-break: break-word; }
-.rp-list td.rp-d { text-align: left; }
+.rp-list td.rp-d { text-align: left; white-space: pre-line; }
 .rp-body { height: 326pt; overflow: hidden; border-bottom: .75pt solid #000; }
 .rp-list.rp-rows td { border-top: .75pt solid #000; border-bottom: 0; }
 .rp-defs-h { background: #d0cece; text-align: center; height: 15pt; line-height: 15pt; border-bottom: .75pt solid #000; }
@@ -301,7 +301,7 @@ div.ag-theme-alpine {   /* div. = เพิ่มน้ำหนักให้�
 .qc-table thead th { height: calc(40px * var(--fs-scale)); padding: 0 10px; vertical-align: middle; text-align: center; }
 .qc-table thead th.text-left { text-align: left; }
 .qc-table td { padding: 0 10px; height: calc(42px * var(--fs-scale)); text-align: center; }
-.qc-table td.c-desc { text-align: left; padding-top: 6px; padding-bottom: 6px; line-height: 1.35; }
+.qc-table td.c-desc { white-space: pre-line; text-align: left; padding-top: 6px; padding-bottom: 6px; line-height: 1.35; }
 .ag-theme-alpine .ag-cell.ag-center { justify-content: center; text-align: center; }
 .ag-theme-alpine .ag-header-cell.ag-header-center .ag-header-cell-label { justify-content: center; }
 .ag-theme-alpine .ag-cell.ag-left { justify-content: flex-start; text-align: left; }
@@ -389,3 +389,19 @@ div.ag-theme-alpine {   /* div. = เพิ่มน้ำหนักให้�
 .fd-page .btn-outline-info, #fpModal .btn-outline-info { color: #0e7490; border-color: #0e7490; }
 .fd-page .btn-outline-info:hover, .fd-page .btn-outline-info.active, #fpModal .btn-outline-info:hover, #fpModal .btn-outline-info.active { background: #0e7490; color: #fff; }
 .fd-page .badge-info, .fd-page .fd-cat.badge-info { background: #0e7490; color: #fff; }
+
+/* Field mode: ปุ่มถ่ายรูป/ลบรูปในฟอร์มของหน้า Field ใหญ่พอแตะ (>= 44px) · Take photo เป็นปุ่มหลัก — จำกัดเฉพาะ #fpModal / #fpItemModal / .fd-page ฟอร์มของ punch_list/qc_list ไม่เปลี่ยน */
+#fpModal .pk-file, #fpModal .pk-cam, #fpItemModal .pk-file, #fpItemModal .pk-cam, .fd-page .pk-file, .fd-page .pk-cam { min-height: 2.75rem; font-size: 1rem; padding: .4rem 1rem; }
+#fpModal .pk-cam, #fpItemModal .pk-cam, .fd-page .pk-cam { background: #0e7490; border-color: #0e7490; color: #fff; font-weight: 600; flex-grow: 2; }
+#fpModal .pk-cam:hover, #fpItemModal .pk-cam:hover, .fd-page .pk-cam:hover { background: #0b5f76; border-color: #0b5f76; color: #fff; }
+#fpModal .pk-thumbs, #fpItemModal .pk-thumbs { gap: 1.75rem; padding-top: 1.75rem; }
+#fpModal .pk-thumb, #fpItemModal .pk-thumb { width: 96px; height: 96px; display: block; }
+#fpModal .pk-thumb button, #fpItemModal .pk-thumb button { top: -1.75rem; right: -1.75rem; width: 2.75rem; height: 2.75rem; line-height: 1; font-size: 1.5rem; }
+/* รายการ punch ใน field_pack: แถวเป็นปุ่มแตะได้ + เลขรายการตัวใหญ่ */
+.fd-item-btn { display: block; width: 100%; min-height: 2.75rem; text-align: left; color: #212529; cursor: pointer; }
+.fd-item-btn:hover { background: #e8f4f8; }
+.fd-item-btn:focus-visible { outline: 3px solid #0e7490; outline-offset: 2px; }
+.fd-item-no { font-weight: 700; font-size: var(--fs-lg); word-break: break-word; }
+.fd-quick { display: flex; flex-wrap: wrap; max-height: 30vh; overflow: auto; }
+.fd-chip { white-space: normal; text-align: left; }
+.fd-desc, #dDescText, .pl-desc { white-space: pre-line; }

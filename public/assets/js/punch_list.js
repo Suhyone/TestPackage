@@ -475,7 +475,7 @@ function buildTable() {
             cellRenderer: (p) => p.value ? `<span class="badge badge-${CAT_CLS[p.value] || 'light'}">${esc(p.value)}</span>` : '',
             headerTooltip: 'Fix priority' }),
       col({ headerName: 'Punch Item Description', field: 'deficiency', flex: 1, minWidth: 300, editable: edit,
-            wrapText: true, autoHeight: true, cellEditor: 'agLargeTextCellEditor', cellEditorPopup: true,
+            wrapText: true, autoHeight: true, cellClass: 'pl-desc', cellEditor: 'agLargeTextCellEditor', cellEditorPopup: true,
             cellRenderer: (p) => p.node.rowPinned && !p.value ? '<span class="text-muted">* Type a new punch item here, then press Save</span>' : esc(p.value) }),
       col({ headerName: 'Discipline', hide: true, field: 'discipline', width: 135, editable: edit,
             cellEditor: 'agSelectCellEditor', cellEditorParams: { values: ['', ...state.disciplines.map(d => d.name)] } }),
