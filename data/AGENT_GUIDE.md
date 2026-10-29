@@ -18,7 +18,7 @@
 ## 🗺️ แผนผังโครงสร้างโฟลเดอร์ (Directory Map)
 
 ```
-C:\Users\tn26015\Documents\GitHub\TestPackage\data\
+<โฟลเดอร์โปรเจค>/data\
 │
 ├── AGENT_GUIDE.md                               # 👈 คู่มือนี้ (สำหรับ AI Agent)
 ├── README.md                                    # คู่มือภาพรวมโครงการ
@@ -195,7 +195,7 @@ erDiagram
 import json
 from pathlib import Path
 
-DATA_DIR = Path(r"C:\Users\tn26015\Documents\GitHub\TestPackage\data\01_ct3_ute_portocem\json")
+DATA_DIR = Path(r"<โฟลเดอร์โปรเจค>/data\01_ct3_ute_portocem\json")
 
 # 1. โหลดข้อมูลแบบ One-stop จากไฟล์ Master Seed
 with open(DATA_DIR / "cimtas_ct3_master_database_seed.json", encoding="utf-8") as f:
@@ -220,7 +220,7 @@ for p in open_punches:
 ```javascript
 import { readFileSync } from 'node:fs';
 
-const path = 'C:/Users/tn26015/Documents/GitHub/TestPackage/data/01_ct3_ute_portocem/json/tb_test_pack_iso.json';
+const path = '<โฟลเดอร์โปรเจค>/data/01_ct3_ute_portocem/json/tb_test_pack_iso.json';
 const isos = JSON.parse(readFileSync(path, 'utf8'));
 
 // จัดกลุ่มท่อตามชนิดของไหล (Fluid)

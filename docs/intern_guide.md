@@ -228,7 +228,7 @@ flowchart TD
 | `categories`, `disciplines` | หมวด Punch (A/B) และแผนก | `01_schema.sql` |
 | `profiles` | ผู้ใช้และ role | `01_schema.sql` |
 
-แถว `punch_rounds` และ `punch_reports` ผู้เขียนคู่มือยังไม่ได้ยืนยันคอลัมน์ ให้เปิดไฟล์ SQL ดูเอง ส่วนแผนภาพความสัมพันธ์ (ER) ของชุดข้อมูล CT3 อยู่ใน `tools/data/AGENT_GUIDE.md` ซึ่งใช้อ้างอิงเพิ่มเติมได้ (โครงสร้างข้อมูลชุด CT3 ไม่ใช่โครงสร้างตารางของ Supabase ทั้งหมด)
+แถว `punch_rounds` และ `punch_reports` ผู้เขียนคู่มือยังไม่ได้ยืนยันคอลัมน์ ให้เปิดไฟล์ SQL ดูเอง ส่วนแผนภาพความสัมพันธ์ (ER) ของชุดข้อมูล CT3 อยู่ใน `data/AGENT_GUIDE.md` ซึ่งใช้อ้างอิงเพิ่มเติมได้ (โครงสร้างข้อมูลชุด CT3 ไม่ใช่โครงสร้างตารางของ Supabase ทั้งหมด)
 
 ความสัมพันธ์สรุป: `projects` 1 โครงการมีหลาย `test_packs`, และ `test_packs` 1 pack มีหลายแถวในตารางลูกส่วนใหญ่ (เช่น `drawings`, `pressure_tests` ผูกด้วยคอลัมน์ `test_pack_id` ยืนยันแล้ว ส่วนตารางอื่นดูในไฟล์ SQL)
 

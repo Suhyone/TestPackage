@@ -1,12 +1,12 @@
 # BJCHI QA/QC ERP — สรุปความคืบหน้า งานที่ต้องทำ และกฎการทำงาน
 
-อัปเดต: 2026-10-26 · ความคืบหน้ารวมโดยประมาณ **35–40%** ของแผนใน `page_roadmap.md` (ประมาณการ ไม่ใช่ตัววัดที่แน่นอน)
+อัปเดต: 2026-10-29 (แก้ส่วน SQL/Pressure test ให้ตรงกับ repo; ส่วนอื่นยังเป็นข้อมูล 2026-10-26–27) · ความคืบหน้ารวมโดยประมาณ **35–40%** ของแผนใน `page_roadmap.md` (ประมาณการ ไม่ใช่ตัววัดที่แน่นอน)
 ข้อสำคัญ: หน้าใหม่ทั้งหมดยังไม่ได้ทดสอบกับข้อมูลจริงหลังล็อกอิน — ตรวจแล้วจากโค้ด ข้อมูลจำลอง และหน้า login เท่านั้น
 
 ## 1. ความคืบหน้า
 
 ### ฐานข้อมูล (Supabase)
-- รัน `sql/01–08` ครบ · ข้อมูลจริง: 3 โครงการ (CT8, CT3, CT5), 58 Test Packages, ISO 508, Content checklist 295, Pre-test 380, Punch 181, Drawings 307
+- รัน `sql/01–08` ครบ (ใน repo มีสคริปต์ถึง `sql/16` — 09–16 ดูลำดับและหน้าที่ใน README; **สถานะการรันใน Supabase ของ 09–16 ยังไม่ได้ยืนยัน**) · ข้อมูลจริง: 3 โครงการ (CT8, CT3, CT5), 58 Test Packages, ISO 508, Content checklist 295, Pre-test 380, Punch 181, Drawings 307
 - ตัวนำเข้ารันซ้ำได้ ไม่เขียนทับสิ่งที่แก้ในเว็บ
 - `sql/09_viewer_role.sql` (role อ่านอย่างเดียว + จำกัดการอัปโหลดรูปเฉพาะ admin/qc/officer) — **เขียนแล้ว ยังไม่ได้รัน**
 
@@ -16,7 +16,7 @@
 | Login · Dashboard · Admin (Users, Category/Discipline) | ใช้ได้ |
 | Punch List (แบบย่อ) · Advanced Grid (admin) | ใช้ได้ |
 | Test Packages (Register) | ใช้ได้ — ชิปสถานะ, ตัวกรอง, Export CSV, เพิ่ม pack |
-| Test Package Detail | Info · Contents · ISO/Spool · Pre-test · Punch (พิมพ์รายงาน) · Sign-off ใช้ได้ · **Pressure test ยังเป็นแท็บเตรียมไว้** |
+| Test Package Detail | Info · Contents · ISO/Spool · Pre-test · Punch (พิมพ์รายงาน) · Sign-off ใช้ได้ · Pressure test (`tp_pressure.js` + `sql/12`, gate ที่ฐานข้อมูล) มีโค้ดแล้ว **ยังไม่ได้ทดสอบกับข้อมูลจริง** |
 | Data Guide | ใช้ได้ |
 
 ### รอบนำเข้า CT9 + โหมดหน้างาน (2026-10-27)
@@ -27,8 +27,8 @@
 ### ความคืบหน้าตามเฟส
 | เฟส | ประมาณ | เหลือ |
 |---|---|---|
-| 1 แกนหลัก Test Package | ~90% | Pressure test, Excel ของรายงาน Punch |
-| 2 ทดสอบและเอกสารประกอบ | ~20% | Pressure Test Record, อัปโหลดไฟล์แนบ Contents, ตัวเลือก Drawing จาก ISO, Module Overview |
+| 1 แกนหลัก Test Package | ~90% | ทดสอบ Pressure test กับข้อมูลจริง, Excel ของรายงาน Punch |
+| 2 ทดสอบและเอกสารประกอบ | ~20% | อัปโหลดไฟล์แนบ Contents, ตัวเลือก Drawing จาก ISO, Module Overview |
 | 3 ใช้งานเต็มรูปแบบ | ~5% | My Tasks, Dossier PDF, หน้านำเข้า Excel, Audit Log, Master data, Profile/403/404 |
 
 ### งานที่ทำในรอบ QA/UX (เสร็จแล้ว)
@@ -51,7 +51,7 @@
 8. Contents (Sheet2) ของ CT9 ไม่มีเครื่องหมายเลือก YES/N/A ในไฟล์ → นำเข้าเป็นยังไม่ยืนยัน ให้ QC ติ๊กในเว็บ
 
 ### งานพัฒนา เรียงตามความสำคัญ
-1. **Pressure Test Record** — ล็อกถ้า pre-test ไม่ผ่านหรือ punch A ยังเปิด
+1. **Pressure Test Record** — โค้ดและ gate เขียนแล้ว (`sql/12–13`) เหลือทดสอบกับข้อมูลจริง
 2. ปัญหา QA ที่ค้าง: contrast ลิงก์/`btn-primary`/`.text-muted`, แถวตาราง qc_list เป็น tab stop 900 ตัว (ใช้ roving tabindex), `data_guide.php` ซ่อนแค่เมนู (ยังเปิดได้ถ้ารู้ URL), ช่องค้นหา/radio Pre-test ไม่มี label, default role ผู้ใช้ใหม่ยังเป็น officer, ปุ่ม NO ใช้สี Bootstrap เดิม, แถว NO แยกด้วยสีอย่างเดียว
 3. ปรับตารางในหน้ารายละเอียด Test Package และ Advanced Grid ให้เข้ากับมาตรฐานตารางใหม่
 4. เฟส 2: อัปโหลดไฟล์แนบ Contents, ตัวเลือก Drawing จาก ISO, Module Overview

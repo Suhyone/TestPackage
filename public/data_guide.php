@@ -3,7 +3,7 @@ declare(strict_types=1);
 /*
  * data_guide.php — คู่มือชุดข้อมูล Test Package (หน้าอ่านอย่างเดียว ไม่มี JavaScript ของตัวเอง)
  * สรุปที่มาของข้อมูล CT8 / CT3 / CT5, ตารางในฐานข้อมูล, ข้อมูลแต่ละอย่างไปแสดงที่หน้าไหน, กฎ punch และวิธีนำเข้า
- * อ้างอิง: tools/data/AGENT_GUIDE.md · All_CT-8.xlsx (ชีต README) · sql/05–08
+ * อ้างอิง: data/AGENT_GUIDE.md · All_CT-8.xlsx (ชีต README) · sql/05–08
  */
 // ตั้งชื่อหน้า + เมนูที่ active แล้วโหลดส่วนหัว
 $pageTitle = 'Data Guide'; $active = 'data_guide';

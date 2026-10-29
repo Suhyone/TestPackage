@@ -112,8 +112,6 @@ div.ag-theme-alpine {   /* div. = เพิ่มน้ำหนักให้�
 .grp-row.grp-l2 { background: #f8fafb; border-top: 1px solid #e3e7ea; }
 .grp-label { flex: none; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; padding-right: 8px; }
 .grp-cell { flex: none; display: flex; align-items: center; justify-content: center; gap: 3px; font-weight: 600; font-size: var(--fs-table); overflow: hidden; }
-.sum-pill { min-width: 24px; padding: 1px 7px; border-radius: 10px; color: #fff; font-size: var(--fs-xs); text-align: center; }
-.sum-pill.bg-s-fixed { color: #212529; }
 
 /* ---- แถวบันทึกใหม่ + ตัวนำทาง ---- */
 .ag-row.new-row { background: #effaf1 !important; box-shadow: inset 4px 0 0 #28a745; }
@@ -141,7 +139,7 @@ div.ag-theme-alpine {   /* div. = เพิ่มน้ำหนักให้�
 .pct { display: flex; align-items: center; gap: 6px; width: 100%; }
 .pct-bar { position: relative; flex: 1; height: 12px; background: #d6dde2; border-radius: 6px; overflow: hidden; display: flex; }
 .pct-bar i { display: block; height: 100%; }
-.pct-done { background: #28a745; } .pct-fixed { background: #ffc107; }
+.pct-done { background: #28a745; }
 .pct b { min-width: 34px; text-align: right; font-size: var(--fs-xs); }
 
 .grp-row { gap: 0 !important; }

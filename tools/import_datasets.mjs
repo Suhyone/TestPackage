@@ -1,6 +1,6 @@
 // นำเข้าชุดข้อมูลเสริมเข้า Supabase: ISO INDEX · Content checklist · Pre-test checklist (CT8) + Test Package / Drawing / Punch ของ CT3 และ CT5
 //   CT8 : All_CT-8.xlsx (ตารางรวมของไฟล์ CT8 ทั้ง 13 ใบ)  -> test_packs(เฉพาะที่ยังไม่มี) · iso_lines · pack_documents · pretest_items
-//   CT3 : tools/data/ct3/*.json (คู่มือ tools/data/AGENT_GUIDE.md) -> projects · test_packs · punch_reports · drawings · punch_items · iso_lines · pack_documents
+//   CT3 : tools/data/ct3/*.json (คู่มือ data/AGENT_GUIDE.md) -> projects · test_packs · punch_reports · drawings · punch_items · iso_lines · pack_documents
 //   CT5 : tools/data/ct5/*.json                                    -> projects · test_packs · punch_reports · drawings · punch_items · iso_lines
 //
 //   ตรวจก่อน (ไม่เขียนข้อมูล):  node tools/import_datasets.mjs
