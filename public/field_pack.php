@@ -31,6 +31,7 @@ include __DIR__ . '/../app/includes/header.php';
   <?php /* ① Pre-test (Sheet5): ตอบ YES / NO / N/A — ตอบ NO ระบบออก punch A ให้อัตโนมัติ */ ?>
   <section class="card fd-sec" id="fpPretest" aria-labelledby="h1">
     <div class="card-header"><h5 id="h1" class="mb-0">1 · Pre-test checklist</h5></div>
+    <div class="fd-pins" id="fpPins" role="navigation" aria-label="Checklists"></div>
     <div class="card-body" id="fpPretestBody"></div>
   </section>
 

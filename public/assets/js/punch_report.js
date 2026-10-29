@@ -98,6 +98,10 @@ async function initReport() {
   if (!rpId) return $('notFound').classList.remove('d-none');
   const { data: tp } = await sb.from('test_packs').select('*').eq('id', rpId).maybeSingle();
   if (!tp) return $('notFound').classList.remove('d-none');
+  if (tp.test_pack_no === 'EXTERNAL') {                                 // pack พิเศษของ External punch ไม่ออกรายงาน
+    $('notFound').innerHTML = 'External punch items are not part of any Test Package — no report for them. <a href="punch_list.php">Back to Punch List</a>';
+    return $('notFound').classList.remove('d-none');
+  }
   const [proj, rep, its] = await Promise.all([
     sb.from('projects').select('*').eq('project_no', tp.project_no).maybeSingle(),
     sb.from('punch_reports').select('*').eq('test_pack_id', rpId).maybeSingle(),

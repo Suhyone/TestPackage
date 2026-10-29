@@ -35,7 +35,7 @@ const openCounts = () => {
 function renderHead() {
   const c = openCounts(), s = pretestSummary(), ptOk = pretest.missing || s.ready;
   $('fpNo').textContent = tp.test_pack_no;
-  $('fpSub').textContent = [tp.module_no && `Module ${tp.module_no}`, tp.piping_system && `System ${tp.piping_system}`, tp.piping_name].filter(Boolean).join(' · ');
+  $('fpSub').textContent = [tp.unit_no && `Unit ${tp.unit_no}`, tp.module_no && `Module ${tp.module_no}`, tp.piping_system && `System ${tp.piping_system}`, tp.piping_name].filter(Boolean).join(' · ');
   $('fpState').innerHTML = fpLoadFailed ? '<span class="badge-status bg-s-fixed">Status unknown</span>' : c.openA ? '<span class="badge-status bg-s-rework">Blocked — Category A open</span>'
     : !ptOk ? '<span class="badge-status bg-s-fixed">Pre-test not complete</span>' : '<span class="badge-status bg-s-approved">Ready to test</span>';
   $('stPre').textContent = pretest.missing ? '' : `${s.total - s.unanswered}/${s.total}`;
@@ -48,29 +48,67 @@ function renderHead() {
 }
 
 // ---------- ① Pre-test ----------
+// แตะตอบ = "ค้างไว้ในหน้า (staged)" ยังไม่ส่งฐานข้อมูล · แต่ละหมวดมีปุ่ม Save ของตัวเอง · gate/ป้ายหัว/#stPre นับเฉพาะคำตอบที่บันทึกแล้ว (pretest.ans)
+// pending[tid] = { answer, remark, staged:true, [sending], [err] } — เก็บลงเครื่องด้วย FieldDraft เพื่อรีโหลดแล้วยังอยู่
+const PT_SHORT = { doc: 'Documents', prep: 'Preparation' };                   // ชื่อสั้นสำหรับ pin / ปุ่ม Save
+const savingSec = new Set();                                                 // หมวดที่กำลังบันทึกอยู่
+const openRemark = new Set();                                                // ข้อที่ผู้ใช้กดเปิดช่องหมายเหตุ
+let activePin = PT_SECTIONS[0].key;
+const secList = (s) => pretest.tpl.filter(t => t.section === s.key);
+const secStat = (s) => {
+  const list = secList(s), pv = (t) => pending[t.id];
+  return { total: list.length, saved: list.filter(t => pretest.ans.has(t.id)).length, unsaved: list.filter(t => pv(t) && !pv(t).sending).length };
+};
+const progHtml = (st) => `· ${st.saved}/${st.total} saved${st.unsaved ? ` · <span class="fd-unsaved"><i class="fas fa-circle" aria-hidden="true"></i> ${st.unsaved} not saved</span>` : ''}`;
+const saveLabel = (s, st) => savingSec.has(s.key) ? 'Saving…' : `Save ${PT_SHORT[s.key].toLowerCase()}${st.unsaved ? ` (${st.unsaved})` : ''}`;
+const saveBtn = (s, st) => `<button type="button" class="btn btn-info fd-btn" data-save="${s.key}"${!canQC || !st.unsaved || savingSec.has(s.key) ? ' disabled' : ''}><i class="fas fa-save" aria-hidden="true"></i> <span class="lbl">${saveLabel(s, st)}</span></button>`;
+const pinsHtml = () => pretest.missing ? '' : PT_SECTIONS.map(s => { const st = secStat(s);
+  return `<button type="button" class="fd-pin${activePin === s.key ? ' on' : ''}" data-pin="${s.key}"${activePin === s.key ? ' aria-current="true"' : ''}><b>${PT_SHORT[s.key]}</b> ${st.saved}/${st.total}${st.unsaved ? ` <span class="fd-unsaved"><i class="fas fa-circle" aria-hidden="true"></i> ${st.unsaved} unsaved</span>` : ''}</button>`; }).join('');
+
+function qRowHtml(t) {
+  const dis = canQC ? '' : ' disabled';
+  const saved = pretest.ans.get(t.id), p = pending[t.id], cur = p?.answer ?? saved?.answer, remark = p ? p.remark : (saved?.remark ?? '');
+  const showRemark = !!cur && (cur === 'no' || !!remark || openRemark.has(t.id));
+  const b = (v, label, cls) => `<button type="button" class="btn fd-ans btn-outline-${cls}${cur === v ? ' active' : ''}" data-t="${t.id}" data-a="${v}" aria-pressed="${cur === v}"${dis}>${cur === v ? '<i class="fas fa-check" aria-hidden="true"></i> ' : ''}${label}</button>`;
+  const tag = p ? (p.sending ? ' <span class="badge badge-info"><i class="fas fa-spinner fa-spin"></i> saving</span>'
+    : p.err ? ` <span class="badge badge-danger"><i class="fas fa-exclamation-circle"></i> not saved: ${esc(p.err)}</span>` : ' <span class="badge badge-warning"><i class="fas fa-clock"></i> not sent</span>')
+    : cur ? ' <span class="fd-q-ok"><i class="fas fa-check-circle" aria-hidden="true"></i> saved</span>' : ' <span class="fd-q-todo">to do</span>';
+  return `<div class="fd-q${cur === 'no' ? ' is-no' : !cur ? ' is-un' : ''}${p ? ' is-pending' : ''}" data-q="${t.id}">
+    <div class="fd-q-text"><span class="fd-q-no">${t.seq}</span> ${esc(t.text)}${tag}</div>
+    <div class="fd-q-btns">${b('yes', 'YES', 'success')}${b('no', 'NO', 'danger')}${b('na', 'N/A', 'secondary')}${cur && !showRemark ? `<button type="button" class="btn btn-outline-secondary fd-note" data-note="${t.id}" aria-label="Add remark for item ${t.seq}" title="Add remark"${dis}><i class="fas fa-comment-dots"></i></button>` : ''}</div>
+    ${showRemark ? `<input class="form-control fd-remark" data-r="${t.id}" value="${esc(remark)}" placeholder="${cur === 'no' ? 'What is wrong? (goes into the punch item)' : 'Remarks (optional)'}" aria-label="Remarks for item ${t.seq}"${dis}>` : ''}
+  </div>`;
+}
 function renderPretestField() {
   const box = $('fpPretestBody');
-  if (pretest.missing) { box.innerHTML = pretestGateHtml(); return; }
-  const dis = canQC ? '' : ' disabled';
+  if (pretest.missing) { box.innerHTML = pretestGateHtml(); $('fpPins').innerHTML = ''; return; }
   const sec = (s) => {
-    const list = pretest.tpl.filter(t => t.section === s.key), unans = list.some(t => !pretest.ans.has(t.id) && !pending[t.id]);
-    return `<div class="d-flex align-items-center mt-3 mb-2"><h6 class="text-uppercase text-muted mb-0">${esc(s.title)}</h6>
-      ${canQC && unans ? `<button type="button" class="btn btn-outline-success fd-btn ml-auto" data-allyes="${s.key}"><i class="fas fa-check-double"></i> Set unanswered to YES</button>` : ''}</div>
-      ${list.map(t => {
-        const saved = pretest.ans.get(t.id), p = pending[t.id], cur = p?.answer ?? saved?.answer, remark = p ? p.remark : (saved?.remark ?? '');
-        const b = (v, label, cls) => `<button type="button" class="btn fd-ans btn-outline-${cls}${cur === v ? ' active' : ''}" data-t="${t.id}" data-a="${v}" aria-pressed="${cur === v}"${dis}>${label}</button>`;
-        return `<div class="fd-q${cur === 'no' ? ' is-no' : !cur ? ' is-un' : ''}${p ? ' is-pending' : ''}" data-q="${t.id}">
-          <div class="fd-q-text"><span class="fd-q-no">${t.seq}</span> ${esc(t.text)}${p ? (p.err ? ` <span class="badge badge-danger"><i class="fas fa-exclamation-circle"></i> not saved: ${esc(p.err)}</span>` : ' <span class="badge badge-warning"><i class="fas fa-clock"></i> not sent</span>') : ''}</div>
-          <div class="fd-q-btns">${b('yes', 'YES', 'success')}${b('no', 'NO', 'danger')}${b('na', 'N/A', 'secondary')}</div>
-          ${cur ? `<input class="form-control fd-remark" data-r="${t.id}" value="${esc(remark)}" placeholder="${cur === 'no' ? 'What is wrong? (goes into the punch item)' : 'Remarks (optional)'}" aria-label="Remarks for item ${t.seq}"${dis}>` : ''}
-        </div>`; }).join('')}`;
+    const list = secList(s), st = secStat(s), unans = list.some(t => !pretest.ans.has(t.id) && !pending[t.id]);
+    return `<section class="fd-block" id="fpSec-${s.key}" aria-labelledby="fpSecH-${s.key}">
+      <div class="fd-block-h"><h6 class="fd-block-t mb-0" id="fpSecH-${s.key}">${esc(s.title)} <span class="fd-block-prog" data-prog="${s.key}">${progHtml(st)}</span></h6>
+        <div class="fd-block-act">${canQC && unans ? `<button type="button" class="btn btn-outline-success fd-btn" data-allyes="${s.key}"><i class="fas fa-check-double"></i> Set unanswered to YES</button>` : ''}${canQC ? saveBtn(s, st) : ''}</div></div>
+      <div class="fd-block-b">${list.map(qRowHtml).join('')}</div>
+      ${canQC ? `<div class="fd-block-f">${saveBtn(s, st)}</div>` : ''}
+    </section>`;
   };
-  const un = Object.values(pending).filter(v => !v.sending).length;       // ข้อที่กำลังส่งอยู่ไม่นับเป็น "ค้างส่ง"
+  const un = Object.values(pending).filter(v => !v.sending && !v.staged).length;   // ร่างเก่าที่ไม่ใช่ staged (ส่งซ้ำอัตโนมัติ) · staged แสดงที่ปุ่ม Save ของหมวด
   box.innerHTML = `${pretestGateHtml()}${un ? `<div class="alert alert-warning d-flex align-items-center" role="status"><span>${un} answer${un > 1 ? 's' : ''} not sent yet (kept on this device).</span>
     <button type="button" class="btn btn-warning fd-btn ml-auto" id="fpSendNow"><i class="fas fa-paper-plane"></i> Send now</button></div>` : ''}
-    ${PT_SECTIONS.map(sec).join('')}<div class="small text-muted mt-3">NO raises a Category A punch item and blocks the pressure test.${canQC ? '' : ' (View only)'}</div>
+    ${PT_SECTIONS.map(sec).join('')}<div class="small text-muted mt-3">Tapping an answer only keeps it on this page — press <b>Save</b> on each checklist to store it. NO raises a Category A punch item (when saved) and blocks the pressure test.${canQC ? '' : ' (View only)'}</div>
     <div class="small mt-2" id="fpPtMsg" role="status" aria-live="polite"></div>`;
+  $('fpPins').innerHTML = pinsHtml(); syncSticky();
 }
+// อัปเดตตัวเลข/ปุ่ม Save/pin ในที่เดิม (ไม่วาดกล่องใหม่ — กันปุ่มที่กำลังกดหายระหว่างแตะ)
+function paintCounts() {
+  const box = $('fpPretestBody');
+  PT_SECTIONS.forEach(s => {
+    const st = secStat(s);
+    box.querySelectorAll(`[data-save="${s.key}"]`).forEach(b => { b.disabled = !canQC || !st.unsaved || savingSec.has(s.key); b.querySelector('.lbl').textContent = saveLabel(s, st); });
+    const pr = box.querySelector(`[data-prog="${s.key}"]`); if (pr) pr.innerHTML = progHtml(st);
+  });
+  $('fpPins').innerHTML = pinsHtml(); syncSticky();
+}
+const paintRow = (tid) => { const row = $('fpPretestBody').querySelector(`[data-q="${tid}"]`), t = pretest.tpl.find(x => x.id === tid); if (row && t) row.outerHTML = qRowHtml(t); };
 const ptMsg = (t, ok = true) => { const e = $('fpPtMsg'); if (e) { e.textContent = t; e.className = 'small mt-2 ' + (ok ? 'text-success' : 'text-danger'); } };
 const savePending = () => {                                                // ไม่เก็บธง sending ลงเครื่อง (เป็นสถานะชั่วคราวของหน้านี้)
   const p = {}; for (const [k, v] of Object.entries(pending)) { const { sending, ...rest } = v; p[k] = rest; }
@@ -78,31 +116,76 @@ const savePending = () => {                                                // �
 };
 const draftWarn = () => FieldDraft.available() ? '' : ' (this device could not store the draft — do not close the page)';
 
-// บันทึกคำตอบ 1 ข้อ: สำเร็จ = ล้างร่างข้อนั้น · เน็ตหลุด = เก็บเป็นร่างรอส่ง · error อื่น = แจ้งผู้ใช้
-// แสดงคำตอบทันที (optimistic · ป้าย not sent จนกว่าจะยืนยัน) แล้วส่งหลังบ้านเป็นคิวต่อข้อ — ไม่ปิดปุ่มทั้งกล่อง
-let sendChain = Promise.resolve();                                         // คิวส่งเดียวทั้งหน้า (ทั้งแตะตอบและ flushPending) — กัน item_no ของ punch A ซ้ำเวลาส่งต่างข้อซ้อนกัน
+// pin ติดอยู่ใต้แถบขั้นตอน: คำนวณความสูงจริงของแถบแล้วตั้งตัวแปร CSS (top ของ pin และ scroll-margin-top ของหัวหมวด)
+function syncSticky() {
+  const st = $('fpSteps').offsetHeight, pn = $('fpPins').offsetHeight, r = document.documentElement.style;
+  r.setProperty('--fd-steps-h', st + 'px'); r.setProperty('--fd-sticky-h', (st + pn + 8) + 'px');
+}
+// scroll-spy: หมวดที่หัวผ่านใต้ pin ลงมาแล้วล่าสุด = หมวดที่กำลังดูอยู่ (เลื่อนสุดล่าง = หมวดสุดท้าย)
+let spyTick = false;
+function spyPins() {
+  if (spyTick || $('fpPretest').classList.contains('d-none') || pretest.missing) return;
+  spyTick = true;
+  requestAnimationFrame(() => {
+    spyTick = false;
+    const line = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fd-sticky-h')) || 120;
+    let cur = PT_SECTIONS[0].key;
+    for (const s of PT_SECTIONS) { const el = $('fpSec-' + s.key); if (el && el.getBoundingClientRect().top <= line + 4) cur = s.key; }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) cur = PT_SECTIONS[PT_SECTIONS.length - 1].key;
+    if (cur !== activePin) { activePin = cur; $('fpPins').innerHTML = pinsHtml(); }
+  });
+}
+
+// ค้างคำตอบไว้ในหน้า + เก็บลงเครื่อง (ยังไม่ส่งฐานข้อมูล) · ตอบเท่าที่บันทึกไว้แล้ว = ยกเลิกการค้างของข้อนั้น
+function stageAnswer(tid, answer, remark) {
+  const saved = pretest.ans.get(tid);
+  if (saved && saved.answer === answer && (saved.remark || '') === remark) delete pending[tid]; else pending[tid] = { answer, remark, staged: true };
+  savePending(); paintRow(tid); paintCounts();
+  ptMsg(draftWarn().trim(), false);
+}
+
+// บันทึกเฉพาะข้อที่ค้างในหมวดนี้ ผ่านคิวส่งเดียวทั้งหน้า (ข้อ NO ออก punch A ใน savePretestAnswer ตามเดิม) · ผลต่อข้อตรงจริง ข้อที่ล้มยังค้างและกด Save ซ้ำได้
+let sendChain = Promise.resolve();                                         // คิวส่งเดียวทั้งหน้า (ทั้ง Save หมวดและ flushPending) — กัน item_no ของ punch A ซ้ำเวลาส่งต่างข้อซ้อนกัน
 const enqueueSend = (fn) => sendChain = sendChain.then(fn).catch(() => {});
-function submitAnswer(tid, answer, remark) {
-  if (!navigator.onLine) { pending[tid] = { answer, remark }; savePending(); renderAll(); return ptMsg('Offline — saved on this device, will send when you are back online.' + draftWarn(), false); }
-  const mine = pending[tid] = { answer, remark, sending: true }; renderAll();
-  return enqueueSend(() => sendAnswer(tid, answer, remark, mine));
-}
-async function sendAnswer(tid, answer, remark, mine) {
-  try { await savePretestAnswer(tid, answer, remark); if (pending[tid] === mine) delete pending[tid]; savePending(); renderAll(); ptMsg('Saved'); }
-  catch (e) {
-    if (pending[tid] !== mine) return;                                     // มีคำตอบใหม่ของข้อนี้ทับแล้ว ให้คำตอบใหม่เป็นตัวตัดสิน
-    if (isNetErr(e)) { pending[tid] = { answer, remark }; savePending(); renderAll(); ptMsg('Connection problem — saved on this device. Press "Send now" when the signal is back.' + draftWarn(), false); }
-    else { pending[tid] = { answer, remark, err: friendlyErr(e) }; savePending(); renderAll(); ptMsg('Could not save: ' + friendlyErr(e) + ' The answer is marked below — tap an answer again to retry.', false); }
+function saveSection(key) {
+  if (savingSec.has(key)) return;
+  if (!navigator.onLine) return ptMsg('Offline — your answers stay on this device. Press Save again when you have signal.' + draftWarn(), false);
+  const mines = [];
+  for (const t of pretest.tpl.filter(x => x.section === key)) {
+    const v = pending[t.id]; if (!v || v.sending) continue;
+    const mine = pending[t.id] = { answer: v.answer, remark: v.remark, staged: true, sending: true }; mines.push([t.id, mine]);
   }
+  if (!mines.length) return;
+  savingSec.add(key); renderAll();
+  return enqueueSend(async () => {
+    let ok = 0, fail = 0, why = '', stop = false;
+    for (const [tid, mine] of mines) {
+      if (pending[tid] !== mine) continue;                                  // ผู้ใช้แตะตอบข้อนี้ใหม่ระหว่างรอคิว → คำตอบใหม่เป็นตัวตัดสิน ไม่นับ
+      if (stop) { pending[tid] = { answer: mine.answer, remark: mine.remark, staged: true }; fail++; continue; }
+      try { await savePretestAnswer(tid, mine.answer, mine.remark); if (pending[tid] === mine) delete pending[tid]; ok++; }
+      catch (e) {
+        const sv = pretest.ans.get(tid);                                    // บันทึกลงฐานข้อมูลสำเร็จแล้วแต่ขั้นรีเฟรชล้ม → นับว่าสำเร็จ (ค่าตรงกับที่ส่ง)
+        if (sv && sv.answer === mine.answer && (sv.remark || '') === (mine.remark || '')) { if (pending[tid] === mine) delete pending[tid]; ok++; }
+        else if (pending[tid] === mine) {
+          fail++;
+          if (isNetErr(e)) { pending[tid] = { answer: mine.answer, remark: mine.remark, staged: true }; stop = true; why = 'no connection'; }
+          else { pending[tid] = { answer: mine.answer, remark: mine.remark, staged: true, err: friendlyErr(e) }; why = why || friendlyErr(e); }
+        }
+      }
+      savePending();
+    }
+    savingSec.delete(key); savePending(); renderAll();
+    ptMsg(fail ? `${ok} saved, ${fail} failed${why ? ` (${why})` : ''} — try again` : `Saved ${ok} answer${ok === 1 ? '' : 's'}`, !fail);
+  });
 }
-// ส่งคำตอบที่ค้างทีละข้อ (หยุดเมื่อเน็ตยังไม่กลับ)
+// ส่งคำตอบค้างแบบเก่า (ไม่ใช่ staged) ทีละข้อ · หยุดเมื่อเน็ตยังไม่กลับ — ข้อ staged รอให้ผู้ใช้กด Save เอง
 async function flushPending() {
-  if (flushing || !Object.keys(pending).length || !navigator.onLine) return;
+  if (flushing || !Object.values(pending).some(v => !v.staged) || !navigator.onLine) return;
   flushing = true;
-  return enqueueSend(async () => {                                                 // ต่อท้ายคิวเดียวกับการแตะตอบ
+  return enqueueSend(async () => {                                                 // ต่อท้ายคิวเดียวกับ Save หมวด
     try {
       for (const [tid, v] of Object.entries(pending)) {
-        if (v.err || v.sending) continue;                                          // ล้มเพราะไม่ใช่เครือข่าย: รอผู้ใช้แตะตอบใหม่
+        if (v.err || v.sending || v.staged) continue;                              // ล้มเพราะไม่ใช่เครือข่าย: รอผู้ใช้แตะตอบใหม่
         try { await savePretestAnswer(+tid, v.answer, v.remark); if (pending[tid] === v) delete pending[tid]; savePending(); }
         catch (e) { if (isNetErr(e)) break; if (pending[tid] === v) pending[tid] = { ...v, err: friendlyErr(e) }; savePending(); ptMsg('An answer could not be saved: ' + friendlyErr(e), false); }
       }
@@ -111,26 +194,35 @@ async function flushPending() {
 }
 function bindPretestField() {
   const box = $('fpPretestBody');
+  $('fpPins').addEventListener('click', (e) => {                              // pin: เลื่อนไปหัวหมวด (ไม่แตะ hash)
+    const b = e.target.closest('[data-pin]'); if (!b) return;
+    activePin = b.dataset.pin; $('fpPins').innerHTML = pinsHtml(); syncSticky();
+    $('fpSec-' + b.dataset.pin)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  });
+  window.addEventListener('scroll', spyPins, { passive: true }); window.addEventListener('resize', () => { syncSticky(); spyPins(); });
+  window.addEventListener('beforeunload', (e) => { if (Object.keys(pending).length) { e.preventDefault(); e.returnValue = ''; } });   // มีข้อที่ยังไม่บันทึก
   box.addEventListener('click', async (e) => {
     if (!canQC) return;
     if (e.target.closest('#fpSendNow')) return flushPending();
+    const sv = e.target.closest('[data-save]'); if (sv) return saveSection(sv.dataset.save);
+    const note = e.target.closest('[data-note]');
+    if (note) { const tid = +note.dataset.note; openRemark.add(tid); paintRow(tid); box.querySelector(`[data-r="${tid}"]`)?.focus(); return; }
     const all = e.target.closest('[data-allyes]');
-    if (all) {
-      const n = pretest.tpl.filter(t => t.section === all.dataset.allyes && !pretest.ans.has(t.id) && !pending[t.id]).length;
-      if (!n || !confirm(`Set ${n} unanswered item${n > 1 ? 's' : ''} to YES?\nItems already answered (including NO and N/A) will not be changed.`)) return;
-      box.querySelectorAll('button,input').forEach(i => i.disabled = true);
-      try { const r = await setSectionYes(all.dataset.allyes); ptMsg(`${r.set} item${r.set === 1 ? '' : 's'} set to YES${r.skipped ? `; ${r.skipped} had just been answered by someone else and kept` : ''}`, !r.skipped); }
-      catch (err) { renderAll(); ptMsg('Could not save: ' + (isNetErr(err) ? 'no connection — try again when you have signal.' : friendlyErr(err)), false); }
+    if (all) {                                                                  // ตั้ง YES ให้ข้อที่ยังไม่ตอบแบบ staged (ไม่เขียน DB — ผู้ใช้กด Save ของหมวดเอง)
+      const ids = pretest.tpl.filter(t => t.section === all.dataset.allyes && !pretest.ans.has(t.id) && !pending[t.id]).map(t => t.id), n = ids.length;
+      if (!n || !confirm(`Set ${n} unanswered item${n > 1 ? 's' : ''} to YES?\nItems already answered (including NO and N/A) will not be changed.\nThey are kept on this page until you press Save.`)) return;
+      ids.forEach(id => { pending[id] = { answer: 'yes', remark: '', staged: true }; });
+      savePending(); renderAll(); ptMsg(`${n} item${n === 1 ? '' : 's'} set to YES — press Save to store them.${draftWarn()}`, !draftWarn());
       return;
     }
     const b = e.target.closest('[data-a]'); if (!b) return;
     const tid = +b.dataset.t, row = box.querySelector(`[data-r="${tid}"]`);
-    await submitAnswer(tid, b.dataset.a, row?.value.trim() || pending[tid]?.remark || pretest.ans.get(tid)?.remark || '');
+    stageAnswer(tid, b.dataset.a, row ? row.value.trim() : (pending[tid]?.remark ?? pretest.ans.get(tid)?.remark ?? ''));
   });
-  box.addEventListener('change', async (e) => {                              // แก้หมายเหตุของข้อที่ตอบแล้ว
+  box.addEventListener('change', (e) => {                                    // แก้หมายเหตุของข้อที่ตอบแล้ว (ค้างไว้เช่นกัน)
     const r = e.target.closest('[data-r]'); if (!r || !canQC) return;
     const tid = +r.dataset.r, cur = pending[tid]?.answer ?? pretest.ans.get(tid)?.answer; if (!cur) return;
-    await submitAnswer(tid, cur, r.value.trim());
+    stageAnswer(tid, cur, r.value.trim());
   });
 }
 
@@ -427,11 +519,36 @@ async function init() {
   loadPhrases().then(() => { if ($('fpQuick')) paintQuick(); });             // ชุดข้อความร่วม (ไม่มีตาราง/ออฟไลน์ → ใช้แคช/ของเครื่อง ไม่ error · ไม่รอ ไม่บล็อกหน้า)
   window.addEventListener('online', paintHeld); window.addEventListener('offline', paintHeld);   // กลับมาออนไลน์ → ชี้ว่ายังมีรูปค้างให้กด Send
   renderAll(); bindPretestField(); showDraftBar();
+  initSteps();
   $('fpAdd').addEventListener('click', openForm);
   $('fpPunchBody').addEventListener('click', (e) => { const b = e.target.closest('[data-item]'); if (b) openItem(+b.dataset.item); });
   $('fpItemSave').addEventListener('click', saveItemPhotos);
   $('fpSave').addEventListener('click', () => saveForm(false)); $('fpSaveMore').addEventListener('click', () => saveForm(true));
   $('fpModalBody').addEventListener('input', saveDraft); $('fpModalBody').addEventListener('change', saveDraft);   // ร่างฟอร์ม punch บันทึกทุกครั้งที่พิมพ์/เลือก
   flushPending();                                                            // มีคำตอบค้างและตอนนี้ออนไลน์อยู่ → ส่งเลย
+}
+// แยก 4 ขั้นเป็นหน้า: แสดงครั้งละ 1 section ตามค่า hash (ไม่ตรง → #fpPretest) · วาดเนื้อหาลง DOM ที่ซ่อนได้ตามปกติ
+const FP_STEPS = ['fpPretest', 'fpPunch', 'fpPressure', 'fpSign'];
+function showStep(id, scrollTop) {
+  if (!FP_STEPS.includes(id)) id = FP_STEPS[0];
+  FP_STEPS.forEach(s => $(s).classList.toggle('d-none', s !== id));
+  document.querySelectorAll('#fpSteps .fd-step').forEach(a => {
+    const on = a.getAttribute('href') === '#' + id;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  if (scrollTop) window.scrollTo(0, 0);
+  syncSticky(); spyPins();                                                 // ความสูง pin เปลี่ยนเมื่อสลับขั้น
+}
+function initSteps() {
+  showStep(location.hash.slice(1), false);
+  $('fpSteps').addEventListener('click', (e) => {
+    const a = e.target.closest('a.fd-step'); if (!a) return;
+    e.preventDefault();
+    const id = a.getAttribute('href').slice(1);
+    history.replaceState(null, '', '#' + id);
+    showStep(id, true);
+  });
+  window.addEventListener('hashchange', () => showStep(location.hash.slice(1), true));   // back/forward หรือแก้ hash เอง
 }
 init().catch(alertErr);
